@@ -13,5 +13,13 @@ export interface List {
 export interface Board {
   id: string;
   title: string;
+  color: string;
   lists: List[];
+}
+
+export interface BoardSummary {
+  id: string;
+  title: string;
+  color: string;
+  cardCount: number;
 }

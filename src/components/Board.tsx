@@ -12,14 +12,19 @@ import { useBoard } from '../hooks/useBoard';
 import ListColumn from './ListColumn';
 import type { Card } from '../types';
 
-export default function Board() {
+interface Props {
+  boardId: string;
+  onBack: () => void;
+}
+
+export default function Board({ boardId, onBack }: Props) {
   const { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, saveMoveToSupabase, renameBoard } =
-    useBoard();
+    useBoard(boardId);
 
   const [addingList, setAddingList] = useState(false);
   const [newListTitle, setNewListTitle] = useState('');
   const [editingBoardTitle, setEditingBoardTitle] = useState(false);
-  const [boardTitleValue, setBoardTitleValue] = useState(board.title);
+  const [boardTitleValue, setBoardTitleValue] = useState('');
   const [activeCard, setActiveCard] = useState<Card | null>(null);
 
   const sensors = useSensors(
@@ -52,7 +57,6 @@ export default function Board() {
     const overListId = overType === 'list' ? (over.id as string) : (over.data.current?.listId as string);
     if (!overListId) return;
 
-    // Only handle cross-list moves here; source list is resolved inside moveCard from latest state
     const activeListId = active.data.current?.listId as string;
     if (activeListId === overListId) return;
 
@@ -68,7 +72,6 @@ export default function Board() {
     setActiveCard(null);
 
     if (active.data.current?.type === 'card') {
-      // Handle same-list reordering (cross-list already done in onDragOver)
       if (over && active.id !== over.id) {
         const overType = over.data.current?.type;
         const overListId = overType === 'list' ? (over.id as string) : (over.data.current?.listId as string);
@@ -82,8 +85,6 @@ export default function Board() {
           }
         }
       }
-
-      // Save final positions to Supabase once drag is complete (setTimeout lets the last moveCard state update flush first)
       setTimeout(() => saveMoveToSupabase(), 0);
     }
   };
@@ -95,18 +96,31 @@ export default function Board() {
   return (
     <div className="board-wrapper">
       <header className="board-header">
+        <span className="board-header-logo">Flow</span>
+        <div className="board-header-divider" />
+        <button className="back-btn" onClick={onBack}>← Boards</button>
+        <div className="board-header-divider" />
         {editingBoardTitle ? (
           <input
             className="input board-title-input"
             value={boardTitleValue}
             onChange={e => setBoardTitleValue(e.target.value)}
             onBlur={() => { renameBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); }}
-            onKeyDown={e => { if (e.key === 'Enter') { renameBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); } }}
+            onKeyDown={e => {
+              if (e.key === 'Enter') { renameBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); }
+              if (e.key === 'Escape') setEditingBoardTitle(false);
+            }}
             autoFocus
           />
         ) : (
-          <h1 className="board-title" onClick={() => setEditingBoardTitle(true)}>{board.title}</h1>
+          <h1
+            className="board-title"
+            onClick={() => { setBoardTitleValue(board.title); setEditingBoardTitle(true); }}
+          >
+            {board.title}
+          </h1>
         )}
+        <div className="board-header-accent" style={{ background: board.color }} />
       </header>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>

@@ -1,89 +1,81 @@
 import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Board, Card } from '../types';
-import { initialBoard } from '../data';
 import { supabase } from '../lib/supabase';
-
-const BOARD_ID = 'board-1';
 
 function generateId() {
   return Math.random().toString(36).slice(2, 9);
 }
 
-export function useBoard() {
-  const [board, setBoard] = useState<Board>({ ...initialBoard, lists: [] });
+const emptyBoard = (id: string): Board => ({ id, title: '', color: '#6366f1', lists: [] });
+
+export function useBoard(boardId: string) {
+  const [board, setBoard] = useState<Board>(emptyBoard(boardId));
   const [loading, setLoading] = useState(true);
   const boardRef = useRef(board);
 
-  // Keep ref in sync with latest board state
   useEffect(() => {
     boardRef.current = board;
   }, [board]);
 
   useEffect(() => {
+    setLoading(true);
+    setBoard(emptyBoard(boardId));
+
     async function load() {
       const { data: boardRow } = await supabase
         .from('boards')
-        .select('id, title')
-        .eq('id', BOARD_ID)
+        .select('id, title, color')
+        .eq('id', boardId)
         .maybeSingle();
 
       if (!boardRow) {
-        // First load — seed the database with initial data
-        await supabase.from('boards').insert({ id: BOARD_ID, title: initialBoard.title });
-        for (const [i, list] of initialBoard.lists.entries()) {
-          await supabase.from('lists').insert({ id: list.id, board_id: BOARD_ID, title: list.title, position: i });
-          for (const [j, card] of list.cards.entries()) {
-            await supabase.from('cards').insert({ id: card.id, list_id: list.id, title: card.title, description: card.description, position: j });
-          }
-        }
-        setBoard(initialBoard);
-      } else {
-        const { data: listsRows } = await supabase
-          .from('lists')
-          .select('id, title, position')
-          .eq('board_id', BOARD_ID)
-          .order('position');
-
-        const listIds = (listsRows || []).map(l => l.id);
-
-        const { data: cardsRows } = listIds.length
-          ? await supabase.from('cards').select('id, list_id, title, description, position').in('list_id', listIds).order('position')
-          : { data: [] };
-
-        setBoard({
-          id: boardRow.id,
-          title: boardRow.title,
-          lists: (listsRows || []).map(l => ({
-            id: l.id,
-            title: l.title,
-            cards: (cardsRows || [])
-              .filter(c => c.list_id === l.id)
-              .map(c => ({ id: c.id, title: c.title, description: c.description })),
-          })),
-        });
+        setLoading(false);
+        return;
       }
+
+      const { data: listsRows } = await supabase
+        .from('lists')
+        .select('id, title, position')
+        .eq('board_id', boardId)
+        .order('position');
+
+      const listIds = (listsRows || []).map(l => l.id);
+
+      const { data: cardsRows } = listIds.length
+        ? await supabase.from('cards').select('id, list_id, title, description, position').in('list_id', listIds).order('position')
+        : { data: [] };
+
+      setBoard({
+        id: boardRow.id,
+        title: boardRow.title,
+        color: boardRow.color || '#6366f1',
+        lists: (listsRows || []).map(l => ({
+          id: l.id,
+          title: l.title,
+          cards: (cardsRows || [])
+            .filter(c => c.list_id === l.id)
+            .map(c => ({ id: c.id, title: c.title, description: c.description })),
+        })),
+      });
 
       setLoading(false);
     }
 
     load();
-  }, []);
+  }, [boardId]);
 
   const addList = useCallback((title: string) => {
     const id = generateId();
     setBoard(prev => {
       const position = prev.lists.length;
-      supabase.from('lists').insert({ id, board_id: BOARD_ID, title, position });
+      supabase.from('lists').insert({ id, board_id: boardId, title, position });
       return { ...prev, lists: [...prev.lists, { id, title, cards: [] }] };
     });
-  }, []);
+  }, [boardId]);
 
   const deleteList = useCallback((listId: string) => {
     supabase.from('lists').delete().eq('id', listId);
-    setBoard(prev => ({
-      ...prev,
-      lists: prev.lists.filter(l => l.id !== listId),
-    }));
+    setBoard(prev => ({ ...prev, lists: prev.lists.filter(l => l.id !== listId) }));
   }, []);
 
   const renameList = useCallback((listId: string, title: string) => {
@@ -146,9 +138,7 @@ export function useBoard() {
             cards.splice(toIndex, 0, card);
             return { ...l, cards };
           }
-          if (l.id === fromListId) {
-            return { ...l, cards: l.cards.filter(c => c.id !== cardId) };
-          }
+          if (l.id === fromListId) return { ...l, cards: l.cards.filter(c => c.id !== cardId) };
           if (l.id === toListId) {
             const cards = [...l.cards];
             cards.splice(toIndex, 0, card);
@@ -171,9 +161,9 @@ export function useBoard() {
   }, []);
 
   const renameBoard = useCallback((title: string) => {
-    supabase.from('boards').update({ title }).eq('id', BOARD_ID);
+    supabase.from('boards').update({ title }).eq('id', boardId);
     setBoard(prev => ({ ...prev, title }));
-  }, []);
+  }, [boardId]);
 
   return { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, saveMoveToSupabase, renameBoard };
 }

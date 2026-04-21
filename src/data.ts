@@ -2,7 +2,7 @@ import type { Board } from './types';
 
 export const initialBoard: Board = {
   id: 'board-1',
-  title: 'My Project',
+  title: 'Flow',
   lists: [
     {
       id: 'list-1',
