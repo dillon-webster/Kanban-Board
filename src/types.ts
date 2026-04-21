@@ -1,25 +1,48 @@
-export interface Card {
+export interface Profile {
   id: string;
-  title: string;
-  description: string;
+  full_name: string;
+  role: 'admin' | 'employee';
 }
 
-export interface List {
+export interface Stage {
   id: string;
-  title: string;
-  cards: Card[];
+  job_type_id: string;
+  name: string;
+  position: number;
+  notify_admin: boolean;
 }
 
-export interface Board {
+export interface JobType {
   id: string;
-  title: string;
-  color: string;
-  lists: List[];
+  name: string;
+  stages: Stage[];
 }
 
-export interface BoardSummary {
+export interface Job {
   id: string;
   title: string;
-  color: string;
-  cardCount: number;
+  customer_name: string | null;
+  due_date: string | null;
+  notes: string | null;
+  job_type_id: string;
+  current_stage_id: string | null;
+  created_at: string;
+  assignees: Profile[];
+}
+
+export interface MyJob {
+  id: string;
+  title: string;
+  customer_name: string | null;
+  due_date: string | null;
+  notes: string | null;
+  job_type_id: string;
+  current_stage_id: string | null;
+  created_at: string;
+  job_type: {
+    id: string;
+    name: string;
+    stages: Stage[];
+  };
+  current_stage: { name: string } | null;
 }
