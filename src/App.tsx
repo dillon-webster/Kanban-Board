@@ -7,10 +7,11 @@ import Dashboard from './components/Dashboard';
 import JobBoard from './components/JobBoard';
 import EmployeeView from './components/EmployeeView';
 import AdminPanel from './components/AdminPanel';
+import AllJobsView from './components/AllJobsView';
 import type { JobType } from './types';
 import './App.css';
 
-type View = 'dashboard' | 'job-board' | 'admin';
+type View = 'dashboard' | 'job-board' | 'admin' | 'all-jobs';
 
 export default function App() {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -25,6 +26,16 @@ export default function App() {
 
   if (profile?.role === 'employee') {
     return <EmployeeView onSignOut={signOut} />;
+  }
+
+  if (view === 'all-jobs') {
+    return (
+      <AllJobsView
+        jobTypes={jobTypes}
+        onBack={() => setView('dashboard')}
+        onSignOut={signOut}
+      />
+    );
   }
 
   if (view === 'admin') {
@@ -52,6 +63,7 @@ export default function App() {
       jobTypes={jobTypes}
       onSelectJobType={jt => { setSelectedJobType(jt); setView('job-board'); }}
       onOpenAdmin={() => setView('admin')}
+      onAllJobs={() => setView('all-jobs')}
       onSignOut={signOut}
     />
   );

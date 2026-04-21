@@ -4,10 +4,11 @@ interface Props {
   jobTypes: JobType[];
   onSelectJobType: (jobType: JobType) => void;
   onOpenAdmin: () => void;
+  onAllJobs: () => void;
   onSignOut: () => void;
 }
 
-export default function Dashboard({ jobTypes, onSelectJobType, onOpenAdmin, onSignOut }: Props) {
+export default function Dashboard({ jobTypes, onSelectJobType, onOpenAdmin, onAllJobs, onSignOut }: Props) {
   return (
     <div className="home-wrapper">
       <header className="home-header">
@@ -19,6 +20,7 @@ export default function Dashboard({ jobTypes, onSelectJobType, onOpenAdmin, onSi
       <main className="home-main">
         <div className="home-title-row">
           <h2 className="home-heading">Job Types</h2>
+          <button className="btn btn-ghost" onClick={onAllJobs}>All Jobs</button>
           <button className="btn btn-ghost" onClick={onOpenAdmin}>Admin Panel</button>
         </div>
 
