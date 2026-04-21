@@ -3,6 +3,7 @@ import {
   DndContext,
   DragOverlay,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
 } from '@dnd-kit/core';
@@ -21,7 +22,10 @@ export default function Board() {
   const [boardTitleValue, setBoardTitleValue] = useState(board.title);
   const [activeCard, setActiveCard] = useState<Card | null>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(TouchSensor, { activationConstraint: { delay: 200, tolerance: 8 } })
+  );
 
   const submitList = () => {
     if (newListTitle.trim()) addList(newListTitle.trim());

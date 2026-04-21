@@ -65,6 +65,7 @@ body {
   padding: 20px 24px;
   overflow-x: auto;
   flex: 1;
+  -webkit-overflow-scrolling: touch;
 }
 
 /* List Column */
@@ -77,6 +78,36 @@ body {
   flex-direction: column;
   max-height: calc(100vh - 100px);
   border: 1px solid rgba(255, 255, 255, 0.06);
+  flex-shrink: 0;
+}
+
+@media (max-width: 480px) {
+  .list-column {
+    width: calc(100vw - 48px);
+    min-width: calc(100vw - 48px);
+  }
+
+  .board-lists {
+    padding: 16px;
+    gap: 10px;
+  }
+
+  .add-list-column {
+    min-width: calc(100vw - 48px);
+    width: calc(100vw - 48px);
+  }
+
+  .card-item {
+    padding: 12px 14px;
+  }
+
+  .btn {
+    padding: 10px 16px;
+  }
+
+  .add-card-btn {
+    padding: 12px 10px;
+  }
 }
 
 .list-header {
