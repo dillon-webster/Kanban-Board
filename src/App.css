@@ -448,8 +448,24 @@ body {
 }
 
 .home-header {
-  padding: 20px 28px;
+  padding: 32px 28px 24px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+
+.home-header .board-header-logo {
+  font-size: 2.8rem;
+}
+
+.home-header-sub {
+  font-size: 0.85rem;
+  color: #334155;
+  font-weight: 500;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .home-main {
@@ -487,14 +503,14 @@ body {
 /* Boards grid */
 .boards-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
-  gap: 16px;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 20px;
 }
 
 .board-card {
   background: #13161e;
   border: 1px solid rgba(255, 255, 255, 0.05);
-  border-radius: 14px;
+  border-radius: 16px;
   cursor: pointer;
   overflow: hidden;
   transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
@@ -502,33 +518,34 @@ body {
 }
 
 .board-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
+  transform: translateY(-3px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
   border-color: rgba(255, 255, 255, 0.1);
 }
 
 .board-card-color {
-  height: 6px;
+  height: 100px;
   background: var(--board-color);
+  opacity: 0.85;
 }
 
 .board-card-body {
-  padding: 16px 18px;
+  padding: 18px 20px;
   display: flex;
   flex-direction: column;
   gap: 6px;
 }
 
 .board-card-title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 700;
   letter-spacing: -0.02em;
   color: #e2e8f0;
 }
 
 .board-card-count {
-  font-size: 0.78rem;
-  color: #334155;
+  font-size: 0.8rem;
+  color: #475569;
   font-weight: 500;
 }
 

@@ -32,6 +32,7 @@ export default function Home({ onSelectBoard }: Props) {
     <div className="home-wrapper">
       <header className="home-header">
         <span className="board-header-logo">Flow</span>
+        <span className="home-header-sub">Your workspace</span>
       </header>
 
       <main className="home-main">
