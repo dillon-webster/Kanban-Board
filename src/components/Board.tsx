@@ -15,9 +15,10 @@ import type { Card } from '../types';
 interface Props {
   boardId: string;
   onBack: () => void;
+  onSignOut: () => void;
 }
 
-export default function Board({ boardId, onBack }: Props) {
+export default function Board({ boardId, onBack, onSignOut }: Props) {
   const { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, saveMoveToSupabase, renameBoard } =
     useBoard(boardId);
 
@@ -121,6 +122,7 @@ export default function Board({ boardId, onBack }: Props) {
           </h1>
         )}
         <div className="board-header-accent" style={{ background: board.color }} />
+        <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragOver={handleDragOver} onDragEnd={handleDragEnd}>

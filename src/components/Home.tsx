@@ -6,9 +6,10 @@ import ConfirmDialog from './ConfirmDialog';
 
 interface Props {
   onSelectBoard: (boardId: string) => void;
+  onSignOut: () => void;
 }
 
-export default function Home({ onSelectBoard }: Props) {
+export default function Home({ onSelectBoard, onSignOut }: Props) {
   const { boards, loading, createBoard, deleteBoard } = useBoards();
   const [creating, setCreating] = useState(false);
   const [deletingBoard, setDeletingBoard] = useState<BoardSummary | null>(null);
@@ -33,6 +34,7 @@ export default function Home({ onSelectBoard }: Props) {
       <header className="home-header">
         <span className="board-header-logo">Flow</span>
         <span className="home-header-sub">Your workspace</span>
+        <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>
 
       <main className="home-main">

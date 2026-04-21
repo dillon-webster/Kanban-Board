@@ -46,7 +46,8 @@ export function useBoards() {
 
   const createBoard = useCallback(async (title: string, color: string): Promise<string> => {
     const id = generateId();
-    await supabase.from('boards').insert({ id, title, color });
+    const { data: { user } } = await supabase.auth.getUser();
+    await supabase.from('boards').insert({ id, title, color, user_id: user?.id });
     setBoards(prev => [...prev, { id, title, color, cardCount: 0 }]);
     return id;
   }, []);
