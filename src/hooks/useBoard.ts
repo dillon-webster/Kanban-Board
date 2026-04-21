@@ -101,7 +101,9 @@ export function useBoard(boardId: string) {
   }, []);
 
   const updateCard = useCallback((listId: string, card: Card) => {
-    supabase.from('cards').update({ title: card.title, description: card.description }).eq('id', card.id);
+    supabase.from('cards').update({ title: card.title, description: card.description }).eq('id', card.id).then((result) => {
+      console.log('updateCard result:', result);
+    });
     setBoard(prev => ({
       ...prev,
       lists: prev.lists.map(l =>
