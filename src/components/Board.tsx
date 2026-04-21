@@ -13,7 +13,7 @@ import ListColumn from './ListColumn';
 import type { Card } from '../types';
 
 export default function Board() {
-  const { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, renameBoard } =
+  const { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, saveMoveToSupabase, renameBoard } =
     useBoard();
 
   const [addingList, setAddingList] = useState(false);
@@ -67,20 +67,25 @@ export default function Board() {
     const { active, over } = event;
     setActiveCard(null);
 
-    if (!over || active.id === over.id) return;
-    if (active.data.current?.type !== 'card') return;
+    if (active.data.current?.type === 'card') {
+      // Handle same-list reordering (cross-list already done in onDragOver)
+      if (over && active.id !== over.id) {
+        const overType = over.data.current?.type;
+        const overListId = overType === 'list' ? (over.id as string) : (over.data.current?.listId as string);
+        const activeListId = active.data.current?.listId as string;
 
-    // Cross-list moves are already done by onDragOver — only handle same-list reordering here
-    const overType = over.data.current?.type;
-    const overListId = overType === 'list' ? (over.id as string) : (over.data.current?.listId as string);
-    const activeListId = active.data.current?.listId as string;
-    if (!overListId || activeListId !== overListId) return;
+        if (overListId && activeListId === overListId) {
+          const activeList = board.lists.find(l => l.id === activeListId);
+          if (activeList) {
+            const toIndex = activeList.cards.findIndex(c => c.id === over.id);
+            if (toIndex >= 0) moveCard(active.id as string, overListId, toIndex);
+          }
+        }
+      }
 
-    const activeList = board.lists.find(l => l.id === activeListId);
-    if (!activeList) return;
-
-    const toIndex = activeList.cards.findIndex(c => c.id === over.id);
-    if (toIndex >= 0) moveCard(active.id as string, overListId, toIndex);
+      // Save final positions to Supabase once drag is complete (setTimeout lets the last moveCard state update flush first)
+      setTimeout(() => saveMoveToSupabase(), 0);
+    }
   };
 
   if (loading) {

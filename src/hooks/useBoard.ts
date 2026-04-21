@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import type { Board, Card } from '../types';
 import { initialBoard } from '../data';
 import { supabase } from '../lib/supabase';
@@ -12,6 +12,12 @@ function generateId() {
 export function useBoard() {
   const [board, setBoard] = useState<Board>({ ...initialBoard, lists: [] });
   const [loading, setLoading] = useState(true);
+  const boardRef = useRef(board);
+
+  // Keep ref in sync with latest board state
+  useEffect(() => {
+    boardRef.current = board;
+  }, [board]);
 
   useEffect(() => {
     async function load() {
@@ -132,34 +138,36 @@ export function useBoard() {
       const card = fromList.cards.find(c => c.id === cardId)!;
       const fromListId = fromList.id;
 
-      const newLists = prev.lists.map(l => {
-        if (l.id === fromListId && l.id === toListId) {
-          const cards = l.cards.filter(c => c.id !== cardId);
-          cards.splice(toIndex, 0, card);
-          return { ...l, cards };
-        }
-        if (l.id === fromListId) {
-          return { ...l, cards: l.cards.filter(c => c.id !== cardId) };
-        }
-        if (l.id === toListId) {
-          const cards = [...l.cards];
-          cards.splice(toIndex, 0, card);
-          return { ...l, cards };
-        }
-        return l;
-      });
-
-      // Sync new positions to Supabase for affected lists
-      for (const list of newLists) {
-        if (list.id === fromListId || list.id === toListId) {
-          list.cards.forEach((c, i) => {
-            supabase.from('cards').update({ list_id: list.id, position: i }).eq('id', c.id);
-          });
-        }
-      }
-
-      return { ...prev, lists: newLists };
+      return {
+        ...prev,
+        lists: prev.lists.map(l => {
+          if (l.id === fromListId && l.id === toListId) {
+            const cards = l.cards.filter(c => c.id !== cardId);
+            cards.splice(toIndex, 0, card);
+            return { ...l, cards };
+          }
+          if (l.id === fromListId) {
+            return { ...l, cards: l.cards.filter(c => c.id !== cardId) };
+          }
+          if (l.id === toListId) {
+            const cards = [...l.cards];
+            cards.splice(toIndex, 0, card);
+            return { ...l, cards };
+          }
+          return l;
+        }),
+      };
     });
+  }, []);
+
+  const saveMoveToSupabase = useCallback(() => {
+    for (const list of boardRef.current.lists) {
+      list.cards.forEach((c, i) => {
+        supabase.from('cards').update({ list_id: list.id, position: i }).eq('id', c.id).then(({ error }) => {
+          if (error) console.error('Failed to save card position:', error);
+        });
+      });
+    }
   }, []);
 
   const renameBoard = useCallback((title: string) => {
@@ -167,5 +175,5 @@ export function useBoard() {
     setBoard(prev => ({ ...prev, title }));
   }, []);
 
-  return { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, renameBoard };
+  return { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, saveMoveToSupabase, renameBoard };
 }
