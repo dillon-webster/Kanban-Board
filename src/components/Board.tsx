@@ -12,7 +12,7 @@ import ListColumn from './ListColumn';
 import type { Card } from '../types';
 
 export default function Board() {
-  const { board, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, renamBoard } =
+  const { board, loading, addList, deleteList, renameList, addCard, updateCard, deleteCard, moveCard, renameBoard } =
     useBoard();
 
   const [addingList, setAddingList] = useState(false);
@@ -79,6 +79,10 @@ export default function Board() {
     if (toIndex >= 0) moveCard(active.id as string, overListId, toIndex);
   };
 
+  if (loading) {
+    return <div className="board-loading">Loading...</div>;
+  }
+
   return (
     <div className="board-wrapper">
       <header className="board-header">
@@ -87,8 +91,8 @@ export default function Board() {
             className="input board-title-input"
             value={boardTitleValue}
             onChange={e => setBoardTitleValue(e.target.value)}
-            onBlur={() => { renamBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); }}
-            onKeyDown={e => { if (e.key === 'Enter') { renamBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); } }}
+            onBlur={() => { renameBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); }}
+            onKeyDown={e => { if (e.key === 'Enter') { renameBoard(boardTitleValue.trim() || board.title); setEditingBoardTitle(false); } }}
             autoFocus
           />
         ) : (

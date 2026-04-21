@@ -15,6 +15,15 @@ body {
   min-height: 100vh;
 }
 
+.board-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  color: #64748b;
+  font-size: 0.9rem;
+}
+
 /* Board */
 .board-wrapper {
   min-height: 100vh;
