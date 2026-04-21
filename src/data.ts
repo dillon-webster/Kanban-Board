@@ -3,6 +3,7 @@ import type { Board } from './types';
 export const initialBoard: Board = {
   id: 'board-1',
   title: 'Flow',
+  color: '#6366f1',
   lists: [
     {
       id: 'list-1',
