@@ -28,10 +28,7 @@ export function useBoard(boardId: string) {
         .eq('id', boardId)
         .maybeSingle();
 
-      if (!boardRow) {
-        setLoading(false);
-        return;
-      }
+      if (!boardRow) { setLoading(false); return; }
 
       const { data: listsRows } = await supabase
         .from('lists')
@@ -66,15 +63,17 @@ export function useBoard(boardId: string) {
 
   const addList = useCallback((title: string) => {
     const id = generateId();
-    setBoard(prev => {
-      const position = prev.lists.length;
-      supabase.from('lists').insert({ id, board_id: boardId, title, position });
-      return { ...prev, lists: [...prev.lists, { id, title, cards: [] }] };
+    const position = boardRef.current.lists.length;
+    supabase.from('lists').insert({ id, board_id: boardId, title, position }).then(({ error }) => {
+      if (error) console.error('addList failed:', error);
     });
+    setBoard(prev => ({ ...prev, lists: [...prev.lists, { id, title, cards: [] }] }));
   }, [boardId]);
 
   const deleteList = useCallback((listId: string) => {
-    supabase.from('lists').delete().eq('id', listId);
+    supabase.from('lists').delete().eq('id', listId).then(({ error }) => {
+      if (error) console.error('deleteList failed:', error);
+    });
     setBoard(prev => ({ ...prev, lists: prev.lists.filter(l => l.id !== listId) }));
   }, []);
 
@@ -88,17 +87,17 @@ export function useBoard(boardId: string) {
 
   const addCard = useCallback((listId: string, title: string) => {
     const id = generateId();
-    setBoard(prev => {
-      const list = prev.lists.find(l => l.id === listId);
-      const position = list ? list.cards.length : 0;
-      supabase.from('cards').insert({ id, list_id: listId, title, description: '', position });
-      return {
-        ...prev,
-        lists: prev.lists.map(l =>
-          l.id === listId ? { ...l, cards: [...l.cards, { id, title, description: '' }] } : l
-        ),
-      };
+    const list = boardRef.current.lists.find(l => l.id === listId);
+    const position = list ? list.cards.length : 0;
+    supabase.from('cards').insert({ id, list_id: listId, title, description: '', position }).then(({ error }) => {
+      if (error) console.error('addCard failed:', error);
     });
+    setBoard(prev => ({
+      ...prev,
+      lists: prev.lists.map(l =>
+        l.id === listId ? { ...l, cards: [...l.cards, { id, title, description: '' }] } : l
+      ),
+    }));
   }, []);
 
   const updateCard = useCallback((listId: string, card: Card) => {
@@ -154,7 +153,7 @@ export function useBoard(boardId: string) {
     for (const list of boardRef.current.lists) {
       list.cards.forEach((c, i) => {
         supabase.from('cards').update({ list_id: list.id, position: i }).eq('id', c.id).then(({ error }) => {
-          if (error) console.error('Failed to save card position:', error);
+          if (error) console.error('saveMoveToSupabase failed:', error);
         });
       });
     }

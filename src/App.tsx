@@ -3,12 +3,26 @@ import Home from './components/Home';
 import Board from './components/Board';
 import './App.css';
 
+const LAST_BOARD_KEY = 'flow-last-board';
+
 export default function App() {
-  const [boardId, setBoardId] = useState<string | null>(null);
+  const [boardId, setBoardId] = useState<string | null>(
+    () => localStorage.getItem(LAST_BOARD_KEY)
+  );
+
+  const selectBoard = (id: string) => {
+    localStorage.setItem(LAST_BOARD_KEY, id);
+    setBoardId(id);
+  };
+
+  const goHome = () => {
+    localStorage.removeItem(LAST_BOARD_KEY);
+    setBoardId(null);
+  };
 
   if (boardId) {
-    return <Board boardId={boardId} onBack={() => setBoardId(null)} />;
+    return <Board boardId={boardId} onBack={goHome} />;
   }
 
-  return <Home onSelectBoard={setBoardId} />;
+  return <Home onSelectBoard={selectBoard} />;
 }
