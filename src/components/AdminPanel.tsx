@@ -83,12 +83,12 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
       <main className="admin-main">
         {/* Job Types */}
         <section className="admin-section">
-          <h2 className="admin-section-title">Job Types & Stages</h2>
+          <h2 className="admin-section-title">Workflows & Steps</h2>
 
           <div className="admin-inline-form">
             <input
               className="input"
-              placeholder="New job type (e.g. Cabinet, Furniture)"
+              placeholder="New workflow (e.g. Cabinet, Furniture)"
               value={newJobTypeName}
               onChange={e => setNewJobTypeName(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter') handleCreateJobType(); }}
@@ -121,7 +121,7 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
                 <div className="admin-inline-form" style={{ marginTop: 8 }}>
                   <input
                     className="input"
-                    placeholder="Add stage..."
+                    placeholder="Add step..."
                     value={newStageName[jt.id] ?? ''}
                     onChange={e => setNewStageName(prev => ({ ...prev, [jt.id]: e.target.value }))}
                     onKeyDown={e => { if (e.key === 'Enter') handleAddStage(jt.id); }}
@@ -139,7 +139,7 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
               </div>
             ))}
             {jobTypes.length === 0 && (
-              <p className="admin-empty">No job types yet. Add one above.</p>
+              <p className="admin-empty">No workflows yet. Add one above.</p>
             )}
           </div>
         </section>

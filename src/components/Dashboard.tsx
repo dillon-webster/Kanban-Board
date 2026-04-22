@@ -19,24 +19,24 @@ export default function Dashboard({ jobTypes, onSelectJobType, onOpenAdmin, onAl
 
       <main className="home-main">
         <div className="home-title-row">
-          <h2 className="home-heading">Job Types</h2>
+          <h2 className="home-heading">Workflows</h2>
           <button className="btn btn-ghost" onClick={onAllJobs}>All Jobs</button>
           <button className="btn btn-ghost" onClick={onOpenAdmin}>Admin Panel</button>
         </div>
 
         {jobTypes.length === 0 ? (
           <div className="home-empty">
-            <p>No job types set up yet.</p>
+            <p>No workflows set up yet.</p>
             <button className="btn btn-primary" onClick={onOpenAdmin}>Open Admin Panel</button>
           </div>
         ) : (
           <div className="boards-grid">
             {jobTypes.map(jt => (
               <div key={jt.id} className="board-card" onClick={() => onSelectJobType(jt)}>
-                <div className="board-card-color" style={{ background: '#6366f1' }} />
+                <div className="board-card-color" />
                 <div className="board-card-body">
                   <h3 className="board-card-title">{jt.name}</h3>
-                  <span className="board-card-count">{jt.stages.length} stage{jt.stages.length !== 1 ? 's' : ''}</span>
+                  <span className="board-card-count">{jt.stages.length} step{jt.stages.length !== 1 ? 's' : ''}</span>
                 </div>
               </div>
             ))}
