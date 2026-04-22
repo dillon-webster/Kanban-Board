@@ -75,6 +75,7 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
     <div className="home-wrapper">
       <header className="board-header">
         <img src="/PNG image.png" alt="Wood River Furniture" className="board-header-logo" />
+        <span className="header-company-name">Wood River Furniture</span>
         <div className="board-header-divider" />
         <button className="back-btn" onClick={onBack}>← Dashboard</button>
         <div className="board-header-divider" />
