@@ -20,6 +20,7 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [deletingJobTypeId, setDeletingJobTypeId] = useState<string | null>(null);
+  const [workflowError, setWorkflowError] = useState<string | null>(null);
 
   const fetchEmployees = async () => {
     const { data } = await supabase.from('profiles').select('*').eq('role', 'employee').order('full_name');
@@ -38,8 +39,10 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
 
   const handleCreateJobType = async () => {
     if (!newJobTypeName.trim()) return;
-    await createJobType(newJobTypeName.trim());
+    const error = await createJobType(newJobTypeName.trim());
+    if (error) { setWorkflowError(error); return; }
     setNewJobTypeName('');
+    setWorkflowError(null);
   };
 
   const handleAddStage = async (jobTypeId: string) => {
@@ -95,6 +98,7 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
             />
             <button className="btn btn-primary" onClick={handleCreateJobType}>Add</button>
           </div>
+          {workflowError && <p className="auth-message" style={{ marginTop: 8, color: 'red' }}>{workflowError}</p>}
 
           <div className="job-type-list">
             {jobTypes.map(jt => (

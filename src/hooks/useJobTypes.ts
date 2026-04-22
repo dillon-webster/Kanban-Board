@@ -23,9 +23,11 @@ export function useJobTypes() {
 
   useEffect(() => { fetchJobTypes(); }, [fetchJobTypes]);
 
-  const createJobType = async (name: string) => {
-    const { data } = await supabase.from('job_types').insert({ name }).select().single();
+  const createJobType = async (name: string): Promise<string | null> => {
+    const { data, error } = await supabase.from('job_types').insert({ name }).select().single();
+    if (error) return error.message;
     if (data) setJobTypes(prev => [...prev, { ...data, stages: [] }]);
+    return null;
   };
 
   const deleteJobType = async (id: string) => {
