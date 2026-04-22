@@ -29,7 +29,17 @@ export function useJobs(jobTypeId: string | null) {
     setLoading(false);
   }, [jobTypeId]);
 
-  useEffect(() => { fetchJobs(); }, [fetchJobs]);
+  useEffect(() => {
+    fetchJobs();
+
+    const channel = supabase
+      .channel('jobs-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, fetchJobs)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_assignments' }, fetchJobs)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchJobs]);
 
   const moveJob = async (jobId: string, stageId: string) => {
     setJobs(prev => prev.map(j => j.id === jobId ? { ...j, current_stage_id: stageId } : j));

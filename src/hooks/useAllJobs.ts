@@ -41,7 +41,17 @@ export function useAllJobs() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchAllJobs(); }, [fetchAllJobs]);
+  useEffect(() => {
+    fetchAllJobs();
+
+    const channel = supabase
+      .channel('all-jobs-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, fetchAllJobs)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_assignments' }, fetchAllJobs)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchAllJobs]);
 
   return { jobs, loading, refetch: fetchAllJobs };
 }

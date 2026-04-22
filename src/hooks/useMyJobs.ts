@@ -33,7 +33,17 @@ export function useMyJobs() {
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchMyJobs(); }, [fetchMyJobs]);
+  useEffect(() => {
+    fetchMyJobs();
+
+    const channel = supabase
+      .channel('my-jobs-changes')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, fetchMyJobs)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_assignments' }, fetchMyJobs)
+      .subscribe();
+
+    return () => { supabase.removeChannel(channel); };
+  }, [fetchMyJobs]);
 
   const advanceJob = async (jobId: string, nextStageId: string) => {
     setJobs(prev => prev.map(j =>
