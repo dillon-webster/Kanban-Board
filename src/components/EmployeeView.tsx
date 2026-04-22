@@ -3,6 +3,7 @@ import { useMyJobs } from '../hooks/useMyJobs';
 import type { MyJob, Stage } from '../types';
 
 interface Props {
+  name: string | null;
   onSignOut: () => void;
 }
 
@@ -120,7 +121,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
   );
 }
 
-export default function EmployeeView({ onSignOut }: Props) {
+export default function EmployeeView({ name, onSignOut }: Props) {
   const { jobs, loading, advanceJob } = useMyJobs();
 
   const getNextStage = (stages: Stage[], currentStageId: string | null): Stage | null => {
@@ -143,6 +144,7 @@ export default function EmployeeView({ onSignOut }: Props) {
         <img src="/PNG image.png" alt="Wood River Furniture" className="board-header-logo" />
         <span className="header-company-name">Wood River Furniture</span>
         <div style={{ marginLeft: 'auto' }} />
+        {name && <span className="header-employee-name">{name}</span>}
         <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>
 

@@ -25,7 +25,7 @@ export default function App() {
   if (jobTypesLoading) return <div className="board-loading">Loading...</div>;
 
   if (profile?.role === 'employee') {
-    return <EmployeeView onSignOut={signOut} />;
+    return <EmployeeView name={profile.full_name} onSignOut={signOut} />;
   }
 
   if (view === 'all-jobs') {
