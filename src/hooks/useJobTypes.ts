@@ -29,6 +29,7 @@ export function useJobTypes() {
   };
 
   const deleteJobType = async (id: string) => {
+    await supabase.from('jobs').delete().eq('job_type_id', id);
     await supabase.from('job_types').delete().eq('id', id);
     setJobTypes(prev => prev.filter(jt => jt.id !== id));
   };
@@ -49,10 +50,14 @@ export function useJobTypes() {
   };
 
   const deleteStage = async (jobTypeId: string, stageId: string) => {
-    await supabase.from('stages').delete().eq('id', stageId);
-    setJobTypes(prev => prev.map(jt =>
-      jt.id === jobTypeId ? { ...jt, stages: jt.stages.filter(s => s.id !== stageId) } : jt
-    ));
+    const { error } = await supabase.from('stages').delete().eq('id', stageId);
+    if (!error) {
+      setJobTypes(prev => prev.map(jt =>
+        jt.id === jobTypeId ? { ...jt, stages: jt.stages.filter(s => s.id !== stageId) } : jt
+      ));
+    } else {
+      console.error('Failed to delete stage:', error.message);
+    }
   };
 
   return { jobTypes, loading, createJobType, deleteJobType, addStage, deleteStage, refetch: fetchJobTypes };
