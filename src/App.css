@@ -6,8 +6,8 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #0d0f14;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 1px);
+  background-color: #0f1218;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
   background-size: 24px 24px;
   color: #e2e8f0;
   min-height: 100vh;
@@ -37,21 +37,18 @@ body {
 }
 
 .board-header {
-  padding: 20px 28px;
+  padding: 12px 28px;
   display: flex;
   align-items: center;
   gap: 12px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: #1E2A4A;
+  border-bottom: 3px solid #E8A030;
 }
 
 .board-header-logo {
-  font-size: 1.5rem;
-  font-weight: 900;
-  letter-spacing: -0.04em;
-  background: linear-gradient(135deg, #6366f1, #a78bfa);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  height: 44px;
+  width: auto;
+  display: block;
 }
 
 .board-header-divider {
@@ -284,7 +281,7 @@ body {
 }
 
 .input:focus {
-  border-color: #6366f1;
+  border-color: #E8A030;
 }
 
 .textarea {
@@ -303,7 +300,7 @@ body {
 }
 
 .textarea:focus {
-  border-color: #6366f1;
+  border-color: #E8A030;
 }
 
 /* Buttons */
@@ -329,8 +326,8 @@ body {
 }
 
 .btn-primary {
-  background: #6366f1;
-  color: white;
+  background: #E8A030;
+  color: #1E2A4A;
 }
 
 .btn-danger {
@@ -448,23 +445,25 @@ body {
 }
 
 .home-header {
-  padding: 32px 28px 24px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  padding: 20px 28px;
+  background: #1E2A4A;
+  border-bottom: 3px solid #E8A030;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
 }
 
 .home-header .board-header-logo {
-  font-size: 2.8rem;
+  height: 64px;
+  width: auto;
 }
 
 .home-header-sub {
-  font-size: 0.85rem;
-  color: #334155;
+  font-size: 0.8rem;
+  color: rgba(255, 255, 255, 0.5);
   font-weight: 500;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
@@ -643,8 +642,10 @@ body {
 }
 
 .auth-logo {
-  font-size: 2.4rem;
-  text-align: center;
+  height: 80px;
+  width: auto;
+  display: block;
+  margin: 0 auto;
 }
 
 .auth-subtitle {
@@ -690,7 +691,7 @@ body {
 .auth-switch-btn {
   background: transparent;
   border: none;
-  color: #6366f1;
+  color: #E8A030;
   cursor: pointer;
   font-size: 0.82rem;
   font-weight: 600;
@@ -852,8 +853,8 @@ body {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: #6366f1;
-  color: white;
+  background: #E8A030;
+  color: #1E2A4A;
   font-size: 0.65rem;
   font-weight: 700;
   display: flex;

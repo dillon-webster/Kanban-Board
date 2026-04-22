@@ -39,7 +39,7 @@ export default function AuthPage() {
   return (
     <div className="auth-wrapper">
       <div className="auth-box">
-        <h1 className="board-header-logo auth-logo">ShopFlow</h1>
+        <img src="/Logo.png" alt="Wood River Furniture" className="auth-logo" />
         <p className="auth-subtitle">
           {mode === 'login' ? 'Welcome back' : 'Accept your invitation'}
         </p>
