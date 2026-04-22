@@ -1117,6 +1117,21 @@ body {
   cursor: pointer;
 }
 
+/* Hidden on touch devices where swipe works, visible on desktop */
+.advance-btn {
+  display: none;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .advance-btn {
+    display: inline-flex;
+  }
+
+  .swipe-hint {
+    display: none;
+  }
+}
+
 .swipe-hint {
   font-size: 0.72rem;
   color: #334155;

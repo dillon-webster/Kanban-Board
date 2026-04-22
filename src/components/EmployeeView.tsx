@@ -108,6 +108,11 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
           <span className="current-stage-badge">
             {job.current_stage?.name ?? 'Not started'}
           </span>
+          {nextStage && (
+            <button className="btn btn-primary advance-btn" onClick={onAdvance}>
+              → {nextStage.name}
+            </button>
+          )}
           {!nextStage && job.current_stage_id && (
             <span className="done-badge">Complete</span>
           )}
