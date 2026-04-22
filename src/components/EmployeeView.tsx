@@ -19,7 +19,7 @@ export default function EmployeeView({ onSignOut }: Props) {
   return (
     <div className="home-wrapper">
       <header className="board-header">
-        <img src="/Logo.png" alt="Wood River Furniture" className="board-header-logo" />
+        <img src="/PNG image.png" alt="Wood River Furniture" className="board-header-logo" />
         <div style={{ marginLeft: 'auto' }} />
         <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>

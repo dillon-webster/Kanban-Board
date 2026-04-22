@@ -6,9 +6,9 @@
 
 body {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background-color: #0f1218;
-  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-color: #0c1017;
+  background-image: radial-gradient(rgba(232, 160, 48, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
   color: #e2e8f0;
   min-height: 100vh;
 }
@@ -94,14 +94,14 @@ body {
 
 /* List Column */
 .list-column {
-  background: #13161e;
+  background: #111827;
   border-radius: 14px;
   width: 290px;
   min-width: 290px;
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 110px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(30, 42, 74, 0.6);
   flex-shrink: 0;
 }
 
@@ -150,8 +150,8 @@ body {
 
 /* Card */
 .card-item {
-  background: #1a1d27;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #151d2e;
+  border: 1px solid rgba(30, 42, 74, 0.8);
   border-radius: 10px;
   padding: 12px 14px;
   cursor: grab;
@@ -161,7 +161,7 @@ body {
 }
 
 .card-item:hover {
-  border-color: rgba(99, 102, 241, 0.35);
+  border-color: rgba(232, 160, 48, 0.4);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transform: translateY(-1px);
 }
@@ -172,7 +172,7 @@ body {
 
 .card-item.dragging {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  border-color: #6366f1;
+  border-color: #E8A030;
   opacity: 0.95;
   transform: rotate(1.5deg);
 }
@@ -257,21 +257,21 @@ body {
 }
 
 .add-list-form {
-  background: #13161e;
+  background: #111827;
   border-radius: 14px;
   padding: 12px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(30, 42, 74, 0.6);
 }
 
 /* Inputs */
 .input {
   width: 100%;
   padding: 9px 12px;
-  background: #0d0f14;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0c1017;
+  border: 1px solid rgba(30, 42, 74, 0.8);
   border-radius: 8px;
   color: #e2e8f0;
   font-size: 0.875rem;
@@ -287,8 +287,8 @@ body {
 .textarea {
   width: 100%;
   padding: 9px 12px;
-  background: #0d0f14;
-  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: #0c1017;
+  border: 1px solid rgba(30, 42, 74, 0.8);
   border-radius: 8px;
   color: #e2e8f0;
   font-size: 0.875rem;
@@ -361,7 +361,7 @@ body {
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.7);
+  background: rgba(0, 0, 0, 0.75);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -370,7 +370,7 @@ body {
 }
 
 .modal {
-  background: #13161e;
+  background: #111827;
   border-radius: 16px;
   padding: 28px;
   width: 480px;
@@ -378,7 +378,7 @@ body {
   display: flex;
   flex-direction: column;
   gap: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  border: 1px solid rgba(30, 42, 74, 0.8);
   box-shadow: 0 32px 64px rgba(0, 0, 0, 0.6);
 }
 
@@ -507,8 +507,8 @@ body {
 }
 
 .board-card {
-  background: #13161e;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #111827;
+  border: 1px solid rgba(30, 42, 74, 0.8);
   border-radius: 16px;
   cursor: pointer;
   overflow: hidden;
@@ -519,13 +519,12 @@ body {
 .board-card:hover {
   transform: translateY(-3px);
   box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(232, 160, 48, 0.4);
 }
 
 .board-card-color {
-  height: 100px;
-  background: var(--board-color);
-  opacity: 0.85;
+  height: 6px;
+  background: #E8A030;
 }
 
 .board-card-body {
@@ -629,8 +628,9 @@ body {
 }
 
 .auth-box {
-  background: #13161e;
-  border: 1px solid rgba(255, 255, 255, 0.07);
+  background: #111827;
+  border: 1px solid rgba(30, 42, 74, 0.8);
+  border-top: 3px solid #E8A030;
   border-radius: 20px;
   padding: 40px;
   width: 100%;
@@ -721,19 +721,20 @@ body {
 
 /* Stage Column */
 .stage-column {
-  background: #13161e;
+  background: #111827;
   border-radius: 14px;
   width: 290px;
   min-width: 290px;
   display: flex;
   flex-direction: column;
   max-height: calc(100vh - 110px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(30, 42, 74, 0.6);
+  border-top: 3px solid #1E2A4A;
   flex-shrink: 0;
 }
 
 .stage-column.notify-stage {
-  border-color: rgba(250, 204, 21, 0.2);
+  border-top-color: #E8A030;
 }
 
 .stage-header {
@@ -748,15 +749,15 @@ body {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #475569;
+  color: #64748b;
   flex: 1;
 }
 
 .stage-count {
   font-size: 0.72rem;
   font-weight: 700;
-  color: #334155;
-  background: rgba(255, 255, 255, 0.04);
+  color: #475569;
+  background: rgba(30, 42, 74, 0.4);
   padding: 2px 7px;
   border-radius: 20px;
 }
@@ -785,8 +786,8 @@ body {
 
 /* Job Card */
 .job-card {
-  background: #1a1d27;
-  border: 1px solid rgba(255, 255, 255, 0.06);
+  background: #151d2e;
+  border: 1px solid rgba(30, 42, 74, 0.8);
   border-radius: 10px;
   padding: 12px 14px;
   cursor: grab;
@@ -799,7 +800,7 @@ body {
 }
 
 .job-card:hover {
-  border-color: rgba(99, 102, 241, 0.35);
+  border-color: rgba(232, 160, 48, 0.4);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
   transform: translateY(-1px);
 }
@@ -810,7 +811,7 @@ body {
 
 .job-card.dragging {
   box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6);
-  border-color: #6366f1;
+  border-color: #E8A030;
   opacity: 0.95;
   transform: rotate(1.5deg);
 }
@@ -887,8 +888,9 @@ body {
 }
 
 .employee-job-item {
-  background: #13161e;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #111827;
+  border: 1px solid rgba(30, 42, 74, 0.6);
+  border-left: 3px solid #E8A030;
   border-radius: 14px;
   padding: 20px 24px;
   display: flex;
@@ -950,8 +952,9 @@ body {
 .current-stage-badge {
   font-size: 0.78rem;
   font-weight: 600;
-  color: #94a3b8;
-  background: rgba(255, 255, 255, 0.06);
+  color: #E8A030;
+  background: rgba(232, 160, 48, 0.1);
+  border: 1px solid rgba(232, 160, 48, 0.2);
   padding: 5px 12px;
   border-radius: 20px;
   white-space: nowrap;
@@ -1023,8 +1026,8 @@ body {
 }
 
 .job-type-item {
-  background: #13161e;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: #111827;
+  border: 1px solid rgba(30, 42, 74, 0.6);
   border-radius: 12px;
   padding: 16px 20px;
   display: flex;
@@ -1151,7 +1154,7 @@ body {
 .all-jobs-table {
   display: flex;
   flex-direction: column;
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(30, 42, 74, 0.6);
   border-radius: 14px;
   overflow: hidden;
 }
@@ -1160,22 +1163,23 @@ body {
   display: grid;
   grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr 1.5fr;
   padding: 10px 20px;
-  background: rgba(255, 255, 255, 0.02);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+  background: #1E2A4A;
+  border-bottom: 1px solid rgba(30, 42, 74, 0.6);
   font-size: 0.72rem;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.08em;
-  color: #334155;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 .all-jobs-row {
   display: grid;
   grid-template-columns: 2fr 1fr 1.2fr 1fr 0.8fr 1.5fr;
   padding: 14px 20px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+  border-bottom: 1px solid rgba(30, 42, 74, 0.3);
   align-items: center;
   transition: background 0.1s;
+  background: #111827;
 }
 
 .all-jobs-row:last-child {
@@ -1183,7 +1187,7 @@ body {
 }
 
 .all-jobs-row:hover {
-  background: rgba(255, 255, 255, 0.02);
+  background: #151d2e;
 }
 
 .all-jobs-title {

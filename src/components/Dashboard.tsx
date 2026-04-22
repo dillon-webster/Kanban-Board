@@ -12,7 +12,7 @@ export default function Dashboard({ jobTypes, onSelectJobType, onOpenAdmin, onAl
   return (
     <div className="home-wrapper">
       <header className="home-header">
-        <img src="/Logo.png" alt="Wood River Furniture" className="board-header-logo" />
+        <img src="/PNG image.png" alt="Wood River Furniture" className="board-header-logo" />
         <span className="home-header-sub">Shop Management</span>
         <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>
