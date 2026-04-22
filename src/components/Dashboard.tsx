@@ -11,9 +11,12 @@ interface Props {
 export default function Dashboard({ jobTypes, onSelectJobType, onOpenAdmin, onAllJobs, onSignOut }: Props) {
   return (
     <div className="home-wrapper">
-      <header className="home-header">
+      <header className="board-header">
         <img src="/PNG image.png" alt="Wood River Furniture" className="board-header-logo" />
-        <span className="home-header-sub">Shop Management</span>
+        <span className="header-company-name">Wood River Furniture</span>
+        <div className="board-header-divider" />
+        <span className="header-company-name">Shop Management</span>
+        <div style={{ marginLeft: 'auto' }} />
         <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>
 

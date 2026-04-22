@@ -64,6 +64,7 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
     <div className="board-wrapper">
       <header className="board-header">
         <img src="/PNG image.png" alt="Wood River Furniture" className="board-header-logo" />
+        <span className="header-company-name">Wood River Furniture</span>
         <div className="board-header-divider" />
         <button className="back-btn" onClick={onBack}>← Jobs</button>
         <div className="board-header-divider" />
