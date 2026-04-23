@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react';
 import { useMyJobs } from '../hooks/useMyJobs';
-import type { MyJob, Stage } from '../types';
+import type { MyJob, Stage, StageChecklistItem } from '../types';
 
 interface Props {
   name: string | null;
@@ -15,9 +15,13 @@ interface SwipeableJobProps {
   prevStage: Stage | null;
   onAdvance: () => void;
   onGoBack: () => void;
+  checklistItems: StageChecklistItem[];
+  completedIds: Set<string>;
+  onToggleChecklistItem: (itemId: string, completed: boolean) => void;
+  canAdvance: boolean;
 }
 
-function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: SwipeableJobProps) {
+function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack, checklistItems, completedIds, onToggleChecklistItem, canAdvance }: SwipeableJobProps) {
   const [dragX, setDragX] = useState(0);
   const startXRef = useRef(0);
   const draggingRef = useRef(false);
@@ -34,12 +38,12 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
     if (!draggingRef.current) return;
     const delta = e.touches[0].clientX - startXRef.current;
     const min = prevStage ? -120 : 0;
-    const max = nextStage ? 120 : 0;
+    const max = nextStage && canAdvance ? 120 : 0;
     setDragX(Math.max(min, Math.min(max, delta)));
   };
 
   const onTouchEnd = () => {
-    if (isAdvancing && nextStage) onAdvance();
+    if (isAdvancing && nextStage && canAdvance) onAdvance();
     else if (isGoingBack && prevStage) onGoBack();
     setDragX(0);
     draggingRef.current = false;
@@ -47,11 +51,12 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
 
   const hintParts = [];
   if (prevStage) hintParts.push('← go back');
-  if (nextStage) hintParts.push('swipe to advance →');
+  if (nextStage && canAdvance) hintParts.push('swipe to advance →');
+
+  const completedCount = checklistItems.filter(item => completedIds.has(item.id)).length;
 
   return (
     <div style={{ position: 'relative', overflow: 'hidden', borderRadius: 14 }}>
-      {/* Left hint (go back) */}
       {prevStage && (
         <div style={{
           position: 'absolute', inset: 0,
@@ -65,8 +70,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
         </div>
       )}
 
-      {/* Right hint (advance) */}
-      {nextStage && (
+      {nextStage && canAdvance && (
         <div style={{
           position: 'absolute', inset: 0,
           background: isAdvancing ? '#22c55e' : '#16a34a',
@@ -102,6 +106,32 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
             <span className="employee-job-type">{job.job_type?.name}</span>
           </div>
           {job.notes && <p className="employee-job-notes">{job.notes}</p>}
+
+          {checklistItems.length > 0 && (
+            <div className="employee-checklist">
+              <span className="employee-checklist-label">
+                {completedCount === checklistItems.length ? 'All done' : `${completedCount}/${checklistItems.length} complete`}
+              </span>
+              <div className="employee-checklist-items">
+                {checklistItems.map(item => {
+                  const done = completedIds.has(item.id);
+                  return (
+                    <label key={item.id} className="employee-checklist-item">
+                      <input
+                        type="checkbox"
+                        checked={done}
+                        onChange={() => onToggleChecklistItem(item.id, done)}
+                      />
+                      <span className={done ? 'employee-checklist-text-done' : ''}>{item.text}</span>
+                    </label>
+                  );
+                })}
+              </div>
+              {!canAdvance && nextStage && (
+                <p className="employee-checklist-warning">Complete all items to advance to {nextStage.name}</p>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="employee-job-right">
@@ -109,7 +139,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
             {job.current_stage?.name ?? 'Not started'}
           </span>
           {nextStage && (
-            <button className="btn btn-primary advance-btn" onClick={onAdvance}>
+            <button className="btn btn-primary advance-btn" onClick={onAdvance} disabled={!canAdvance}>
               → {nextStage.name}
             </button>
           )}
@@ -127,7 +157,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack }: Sw
 }
 
 export default function EmployeeView({ name, onSignOut }: Props) {
-  const { jobs, loading, advanceJob } = useMyJobs();
+  const { jobs, loading, advanceJob, toggleChecklistItem } = useMyJobs();
 
   const getNextStage = (stages: Stage[], currentStageId: string | null): Stage | null => {
     if (!currentStageId) return stages[0] ?? null;
@@ -166,6 +196,10 @@ export default function EmployeeView({ name, onSignOut }: Props) {
               const stages = job.job_type?.stages ?? [];
               const nextStage = getNextStage(stages, job.current_stage_id);
               const prevStage = getPrevStage(stages, job.current_stage_id);
+              const checklistItems = stages.find(s => s.id === job.current_stage_id)?.checklist_items ?? [];
+              const completedIds = new Set(job.checklist_completions.map(c => c.stage_checklist_item_id));
+              const canAdvance = checklistItems.length === 0 || checklistItems.every(item => completedIds.has(item.id));
+
               return (
                 <SwipeableJobCard
                   key={job.id}
@@ -174,6 +208,10 @@ export default function EmployeeView({ name, onSignOut }: Props) {
                   prevStage={prevStage}
                   onAdvance={() => advanceJob(job.id, nextStage!.id)}
                   onGoBack={() => advanceJob(job.id, prevStage!.id)}
+                  checklistItems={checklistItems}
+                  completedIds={completedIds}
+                  onToggleChecklistItem={(itemId, completed) => toggleChecklistItem(job.id, itemId, completed)}
+                  canAdvance={canAdvance}
                 />
               );
             })}

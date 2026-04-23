@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Job, JobType, Profile, Stage } from '../types';
+import type { Job, JobType, Profile, Stage, StageChecklistItem } from '../types';
 
 interface Props {
   jobTypes: JobType[];
@@ -29,9 +29,32 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(job?.assignees.map(a => a.id) ?? []);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [completedIds, setCompletedIds] = useState<Set<string>>(
+    new Set(job?.checklist_completions.map(c => c.stage_checklist_item_id) ?? [])
+  );
 
   const selectedJobType = jobTypes.find(jt => jt.id === jobTypeId);
   const stages: Stage[] = selectedJobType?.stages ?? [];
+  const currentStageChecklistItems: StageChecklistItem[] = job
+    ? (stages.find(s => s.id === currentStageId)?.checklist_items ?? [])
+    : [];
+
+  const toggleChecklistItem = async (itemId: string) => {
+    if (!job) return;
+    const wasCompleted = completedIds.has(itemId);
+    setCompletedIds(prev => {
+      const next = new Set(prev);
+      if (wasCompleted) next.delete(itemId); else next.add(itemId);
+      return next;
+    });
+    if (wasCompleted) {
+      await supabase.from('job_checklist_completions')
+        .delete().eq('job_id', job.id).eq('stage_checklist_item_id', itemId);
+    } else {
+      await supabase.from('job_checklist_completions')
+        .insert({ job_id: job.id, stage_checklist_item_id: itemId });
+    }
+  };
 
   useEffect(() => {
     supabase
@@ -138,6 +161,27 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
           onChange={e => setNotes(e.target.value)}
           rows={3}
         />
+
+        {currentStageChecklistItems.length > 0 && (
+          <>
+            <label>Stage Checklist</label>
+            <div className="modal-checklist">
+              {currentStageChecklistItems.map(item => {
+                const done = completedIds.has(item.id);
+                return (
+                  <label key={item.id} className="modal-checklist-item">
+                    <input
+                      type="checkbox"
+                      checked={done}
+                      onChange={() => toggleChecklistItem(item.id)}
+                    />
+                    <span className={done ? 'modal-checklist-text-done' : ''}>{item.text}</span>
+                  </label>
+                );
+              })}
+            </div>
+          </>
+        )}
 
         {employees.length > 0 && (
           <>

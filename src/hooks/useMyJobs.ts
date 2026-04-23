@@ -15,8 +15,9 @@ export function useMyJobs() {
       .select(`
         *,
         job_assignments!inner(employee_id),
-        job_type:job_types(id, name, stages(*)),
-        current_stage:stages(name)
+        job_type:job_types(id, name, stages(*, stage_checklist_items(id, text, position))),
+        current_stage:stages!current_stage_id(name),
+        checklist_completions:job_checklist_completions(stage_checklist_item_id)
       `)
       .eq('job_assignments.employee_id', user.id)
       .order('created_at');
@@ -26,8 +27,12 @@ export function useMyJobs() {
         ...job,
         job_type: {
           ...job.job_type,
-          stages: (job.job_type?.stages || []).sort((a: any, b: any) => a.position - b.position),
+          stages: (job.job_type?.stages || []).sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
+            ...s,
+            checklist_items: (s.stage_checklist_items || []).sort((a: any, b: any) => a.position - b.position),
+          })),
         },
+        checklist_completions: job.checklist_completions || [],
       })));
     }
     setLoading(false);
@@ -40,6 +45,7 @@ export function useMyJobs() {
       .channel('my-jobs-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, fetchMyJobs)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'job_assignments' }, fetchMyJobs)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_checklist_completions' }, fetchMyJobs)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };
@@ -53,5 +59,25 @@ export function useMyJobs() {
     await fetchMyJobs();
   };
 
-  return { jobs, loading, advanceJob, refetch: fetchMyJobs };
+  const toggleChecklistItem = async (jobId: string, itemId: string, completed: boolean) => {
+    setJobs(prev => prev.map(j => {
+      if (j.id !== jobId) return j;
+      if (completed) {
+        return { ...j, checklist_completions: j.checklist_completions.filter(c => c.stage_checklist_item_id !== itemId) };
+      }
+      return { ...j, checklist_completions: [...j.checklist_completions, { stage_checklist_item_id: itemId }] };
+    }));
+
+    if (completed) {
+      await supabase.from('job_checklist_completions')
+        .delete()
+        .eq('job_id', jobId)
+        .eq('stage_checklist_item_id', itemId);
+    } else {
+      await supabase.from('job_checklist_completions')
+        .insert({ job_id: jobId, stage_checklist_item_id: itemId });
+    }
+  };
+
+  return { jobs, loading, advanceJob, toggleChecklistItem, refetch: fetchMyJobs };
 }

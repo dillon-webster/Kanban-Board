@@ -23,7 +23,7 @@ export default function StageColumn({ stage, jobs, onJobClick }: Props) {
       <SortableContext items={jobs.map(j => j.id)} strategy={verticalListSortingStrategy}>
         <div className="stage-job-list" ref={setNodeRef}>
           {jobs.map(job => (
-            <JobCard key={job.id} job={job} onClick={() => onJobClick(job)} />
+            <JobCard key={job.id} job={job} stageChecklistItems={stage.checklist_items} onClick={() => onJobClick(job)} />
           ))}
           {jobs.length === 0 && <div className="stage-empty">No jobs</div>}
         </div>

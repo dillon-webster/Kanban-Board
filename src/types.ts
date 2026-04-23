@@ -4,12 +4,20 @@ export interface Profile {
   role: 'admin' | 'employee';
 }
 
+export interface StageChecklistItem {
+  id: string;
+  stage_id: string;
+  text: string;
+  position: number;
+}
+
 export interface Stage {
   id: string;
   job_type_id: string;
   name: string;
   position: number;
   notify_admin: boolean;
+  checklist_items: StageChecklistItem[];
 }
 
 export interface JobType {
@@ -28,6 +36,7 @@ export interface Job {
   current_stage_id: string | null;
   created_at: string;
   assignees: Profile[];
+  checklist_completions: { stage_checklist_item_id: string }[];
 }
 
 export interface MyJob {
@@ -45,4 +54,5 @@ export interface MyJob {
     stages: Stage[];
   };
   current_stage: { name: string } | null;
+  checklist_completions: { stage_checklist_item_id: string }[];
 }

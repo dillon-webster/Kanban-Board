@@ -14,7 +14,7 @@ export function useJobs(jobTypeId: string | null) {
     }
     const { data } = await supabase
       .from('jobs')
-      .select('*, job_assignments(profiles(id, full_name, role))')
+      .select('*, job_assignments(profiles(id, full_name, role)), checklist_completions:job_checklist_completions(stage_checklist_item_id)')
       .eq('job_type_id', jobTypeId)
       .order('created_at');
 
@@ -24,6 +24,7 @@ export function useJobs(jobTypeId: string | null) {
         assignees: (job.job_assignments || [])
           .map((a: any) => a.profiles)
           .filter(Boolean),
+        checklist_completions: job.checklist_completions || [],
       })));
     }
     setLoading(false);
@@ -36,6 +37,7 @@ export function useJobs(jobTypeId: string | null) {
       .channel('jobs-changes')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'jobs' }, fetchJobs)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'job_assignments' }, fetchJobs)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'job_checklist_completions' }, fetchJobs)
       .subscribe();
 
     return () => { supabase.removeChannel(channel); };

@@ -9,13 +9,16 @@ export function useJobTypes() {
   const fetchJobTypes = useCallback(async () => {
     const { data } = await supabase
       .from('job_types')
-      .select('*, stages(*)')
+      .select('*, stages(*, stage_checklist_items(id, text, position))')
       .order('name');
 
     if (data) {
       setJobTypes(data.map(jt => ({
         ...jt,
-        stages: (jt.stages || []).sort((a: any, b: any) => a.position - b.position),
+        stages: (jt.stages || []).sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
+          ...s,
+          checklist_items: (s.stage_checklist_items || []).sort((a: any, b: any) => a.position - b.position),
+        })),
       })));
     }
     setLoading(false);
@@ -46,7 +49,7 @@ export function useJobTypes() {
       .single();
     if (data) {
       setJobTypes(prev => prev.map(jt =>
-        jt.id === jobTypeId ? { ...jt, stages: [...jt.stages, data] } : jt
+        jt.id === jobTypeId ? { ...jt, stages: [...jt.stages, { ...data, checklist_items: [] }] } : jt
       ));
     }
   };
@@ -62,5 +65,33 @@ export function useJobTypes() {
     }
   };
 
-  return { jobTypes, loading, createJobType, deleteJobType, addStage, deleteStage, refetch: fetchJobTypes };
+  const addStageChecklistItem = async (stageId: string, text: string) => {
+    const stage = jobTypes.flatMap(jt => jt.stages).find(s => s.id === stageId);
+    const position = stage?.checklist_items.length ?? 0;
+    const { data } = await supabase
+      .from('stage_checklist_items')
+      .insert({ stage_id: stageId, text, position })
+      .select()
+      .single();
+    if (data) {
+      setJobTypes(prev => prev.map(jt => ({
+        ...jt,
+        stages: jt.stages.map(s =>
+          s.id === stageId ? { ...s, checklist_items: [...s.checklist_items, data] } : s
+        ),
+      })));
+    }
+  };
+
+  const deleteStageChecklistItem = async (stageId: string, itemId: string) => {
+    await supabase.from('stage_checklist_items').delete().eq('id', itemId);
+    setJobTypes(prev => prev.map(jt => ({
+      ...jt,
+      stages: jt.stages.map(s =>
+        s.id === stageId ? { ...s, checklist_items: s.checklist_items.filter(ci => ci.id !== itemId) } : s
+      ),
+    })));
+  };
+
+  return { jobTypes, loading, createJobType, deleteJobType, addStage, deleteStage, addStageChecklistItem, deleteStageChecklistItem, refetch: fetchJobTypes };
 }

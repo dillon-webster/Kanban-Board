@@ -10,13 +10,14 @@ interface Props {
 }
 
 export default function AdminPanel({ onBack, onSignOut }: Props) {
-  const { jobTypes, createJobType, deleteJobType, addStage, deleteStage } = useJobTypes();
+  const { jobTypes, createJobType, deleteJobType, addStage, deleteStage, addStageChecklistItem, deleteStageChecklistItem } = useJobTypes();
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [invites, setInvites] = useState<{ id: string; email: string }[]>([]);
 
   const [newJobTypeName, setNewJobTypeName] = useState('');
   const [newStageName, setNewStageName] = useState<Record<string, string>>({});
   const [newStageNotify, setNewStageNotify] = useState<Record<string, boolean>>({});
+  const [newChecklistText, setNewChecklistText] = useState<Record<string, string>>({});
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteMessage, setInviteMessage] = useState('');
   const [deletingJobTypeId, setDeletingJobTypeId] = useState<string | null>(null);
@@ -115,10 +116,48 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
                 <div className="stage-list">
                   {jt.stages.map((stage, i) => (
                     <div key={stage.id} className="stage-list-item">
-                      <span className="stage-position">{i + 1}</span>
-                      <span className="stage-list-name">{stage.name}</span>
-                      {stage.notify_admin && <span className="notify-badge" title="Notifies admin">★</span>}
-                      <button className="icon-btn" onClick={() => deleteStage(jt.id, stage.id)}>✕</button>
+                      <div className="stage-item-header">
+                        <span className="stage-position">{i + 1}</span>
+                        <span className="stage-list-name">{stage.name}</span>
+                        {stage.notify_admin && <span className="notify-badge" title="Notifies admin">★</span>}
+                        <button className="icon-btn" onClick={() => deleteStage(jt.id, stage.id)}>✕</button>
+                      </div>
+
+                      {stage.checklist_items.length > 0 && (
+                        <div className="stage-checklist-list">
+                          {stage.checklist_items.map(item => (
+                            <div key={item.id} className="stage-checklist-row">
+                              <span className="stage-checklist-bullet">—</span>
+                              <span className="stage-checklist-item-text">{item.text}</span>
+                              <button className="icon-btn" onClick={() => deleteStageChecklistItem(stage.id, item.id)}>✕</button>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      <div className="stage-checklist-add-row">
+                        <input
+                          className="input"
+                          style={{ fontSize: '0.8rem', padding: '5px 10px' }}
+                          placeholder="Add requirement..."
+                          value={newChecklistText[stage.id] ?? ''}
+                          onChange={e => setNewChecklistText(prev => ({ ...prev, [stage.id]: e.target.value }))}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter') {
+                              const text = newChecklistText[stage.id]?.trim();
+                              if (text) { addStageChecklistItem(stage.id, text); setNewChecklistText(prev => ({ ...prev, [stage.id]: '' })); }
+                            }
+                          }}
+                        />
+                        <button
+                          className="btn btn-ghost"
+                          style={{ fontSize: '0.8rem', padding: '5px 12px' }}
+                          onClick={() => {
+                            const text = newChecklistText[stage.id]?.trim();
+                            if (text) { addStageChecklistItem(stage.id, text); setNewChecklistText(prev => ({ ...prev, [stage.id]: '' })); }
+                          }}
+                        >+</button>
+                      </div>
                     </div>
                   ))}
                 </div>
