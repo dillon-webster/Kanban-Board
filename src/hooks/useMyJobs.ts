@@ -17,7 +17,7 @@ export function useMyJobs() {
         job_assignments!inner(employee_id),
         job_type:job_types(id, name, stages(*, stage_checklist_items(id, text, position))),
         current_stage:stages!current_stage_id(name),
-        checklist_completions:job_checklist_completions(stage_checklist_item_id)
+        checklist_completions:job_checklist_completions(stage_checklist_item_id, completed_at, checker:profiles!completed_by(full_name))
       `)
       .eq('job_assignments.employee_id', user.id)
       .order('created_at');
@@ -32,7 +32,11 @@ export function useMyJobs() {
             checklist_items: (s.stage_checklist_items || []).sort((a: any, b: any) => a.position - b.position),
           })),
         },
-        checklist_completions: job.checklist_completions || [],
+        checklist_completions: (job.checklist_completions || []).map((c: any) => ({
+          stage_checklist_item_id: c.stage_checklist_item_id,
+          completed_at: c.completed_at,
+          checker: Array.isArray(c.checker) ? (c.checker[0] ?? null) : c.checker,
+        })),
       })));
     }
     setLoading(false);
@@ -65,7 +69,7 @@ export function useMyJobs() {
       if (completed) {
         return { ...j, checklist_completions: j.checklist_completions.filter(c => c.stage_checklist_item_id !== itemId) };
       }
-      return { ...j, checklist_completions: [...j.checklist_completions, { stage_checklist_item_id: itemId }] };
+      return { ...j, checklist_completions: [...j.checklist_completions, { stage_checklist_item_id: itemId, completed_at: null, checker: null }] };
     }));
 
     if (completed) {
@@ -74,8 +78,9 @@ export function useMyJobs() {
         .eq('job_id', jobId)
         .eq('stage_checklist_item_id', itemId);
     } else {
+      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('job_checklist_completions')
-        .insert({ job_id: jobId, stage_checklist_item_id: itemId });
+        .insert({ job_id: jobId, stage_checklist_item_id: itemId, completed_by: user?.id });
     }
   };
 

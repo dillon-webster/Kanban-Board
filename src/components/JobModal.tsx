@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Job, JobType, Profile, Stage, StageChecklistItem } from '../types';
+import type { ChecklistCompletion, Job, JobType, Profile, Stage, StageChecklistItem } from '../types';
 
 interface Props {
   jobTypes: JobType[];
@@ -29,9 +29,10 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(job?.assignees.map(a => a.id) ?? []);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
-  const [completedIds, setCompletedIds] = useState<Set<string>>(
-    new Set(job?.checklist_completions.map(c => c.stage_checklist_item_id) ?? [])
+  const [completions, setCompletions] = useState<ChecklistCompletion[]>(
+    job?.checklist_completions ?? []
   );
+  const completedIds = new Set(completions.map(c => c.stage_checklist_item_id));
 
   const selectedJobType = jobTypes.find(jt => jt.id === jobTypeId);
   const stages: Stage[] = selectedJobType?.stages ?? [];
@@ -39,20 +40,32 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
     ? (stages.find(s => s.id === currentStageId)?.checklist_items ?? [])
     : [];
 
+  const fetchCompletions = async () => {
+    if (!job) return;
+    const { data } = await supabase
+      .from('job_checklist_completions')
+      .select('stage_checklist_item_id, completed_at, checker:profiles!completed_by(full_name)')
+      .eq('job_id', job.id);
+    if (data) setCompletions(data.map((c: any) => ({
+      stage_checklist_item_id: c.stage_checklist_item_id,
+      completed_at: c.completed_at,
+      checker: Array.isArray(c.checker) ? (c.checker[0] ?? null) : c.checker,
+    })));
+  };
+
   const toggleChecklistItem = async (itemId: string) => {
     if (!job) return;
     const wasCompleted = completedIds.has(itemId);
-    setCompletedIds(prev => {
-      const next = new Set(prev);
-      if (wasCompleted) next.delete(itemId); else next.add(itemId);
-      return next;
-    });
     if (wasCompleted) {
+      setCompletions(prev => prev.filter(c => c.stage_checklist_item_id !== itemId));
       await supabase.from('job_checklist_completions')
         .delete().eq('job_id', job.id).eq('stage_checklist_item_id', itemId);
     } else {
+      setCompletions(prev => [...prev, { stage_checklist_item_id: itemId, completed_at: null, checker: null }]);
+      const { data: { user } } = await supabase.auth.getUser();
       await supabase.from('job_checklist_completions')
-        .insert({ job_id: job.id, stage_checklist_item_id: itemId });
+        .insert({ job_id: job.id, stage_checklist_item_id: itemId, completed_by: user?.id });
+      await fetchCompletions();
     }
   };
 
@@ -167,23 +180,31 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
             <label>Stage Checklist</label>
             <div className="modal-checklist">
               {currentStageChecklistItems.map(item => {
-                const done = completedIds.has(item.id);
+                const completion = completions.find(c => c.stage_checklist_item_id === item.id);
+                const done = !!completion;
                 return (
-                  <label key={item.id} className="modal-checklist-item">
-                    <input
-                      type="checkbox"
-                      checked={done}
-                      onChange={() => toggleChecklistItem(item.id)}
-                    />
-                    <span className={done ? 'modal-checklist-text-done' : ''}>{item.text}</span>
-                  </label>
+                  <div key={item.id} className="modal-checklist-item">
+                    <label className="modal-checklist-label">
+                      <input
+                        type="checkbox"
+                        checked={done}
+                        onChange={() => toggleChecklistItem(item.id)}
+                      />
+                      <span className={done ? 'modal-checklist-text-done' : ''}>{item.text}</span>
+                    </label>
+                    {done && completion?.completed_at && (
+                      <span className="modal-checklist-meta">
+                        {completion.checker?.full_name ?? '—'} · {new Date(completion.completed_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                      </span>
+                    )}
+                  </div>
                 );
               })}
             </div>
           </>
         )}
 
-        {employees.length > 0 && (
+{employees.length > 0 && (
           <>
             <label>Assign Employees</label>
             <div className="employee-select">

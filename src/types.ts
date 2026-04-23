@@ -11,6 +11,12 @@ export interface StageChecklistItem {
   position: number;
 }
 
+export interface ChecklistCompletion {
+  stage_checklist_item_id: string;
+  completed_at: string | null;
+  checker: { full_name: string } | null;
+}
+
 export interface Stage {
   id: string;
   job_type_id: string;
@@ -36,7 +42,7 @@ export interface Job {
   current_stage_id: string | null;
   created_at: string;
   assignees: Profile[];
-  checklist_completions: { stage_checklist_item_id: string }[];
+  checklist_completions: ChecklistCompletion[];
 }
 
 export interface MyJob {
@@ -54,5 +60,5 @@ export interface MyJob {
     stages: Stage[];
   };
   current_stage: { name: string } | null;
-  checklist_completions: { stage_checklist_item_id: string }[];
+  checklist_completions: ChecklistCompletion[];
 }

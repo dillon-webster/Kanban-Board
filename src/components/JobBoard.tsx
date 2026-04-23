@@ -12,6 +12,7 @@ import type { Job, JobType } from '../types';
 import { useJobs } from '../hooks/useJobs';
 import StageColumn from './StageColumn';
 import JobModal from './JobModal';
+import JobDetailModal from './JobDetailModal';
 import ConfirmDialog from './ConfirmDialog';
 
 interface Props {
@@ -24,6 +25,7 @@ interface Props {
 export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props) {
   const { jobs, loading, moveJob, createJob, updateJob, deleteJob } = useJobs(jobType.id);
   const [creatingJob, setCreatingJob] = useState(false);
+  const [viewingJob, setViewingJob] = useState<Job | null>(null);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [deletingJob, setDeletingJob] = useState<Job | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
@@ -85,7 +87,7 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
               key={stage.id}
               stage={stage}
               jobs={jobs.filter(j => j.current_stage_id === stage.id)}
-              onJobClick={job => setEditingJob(job)}
+              onJobClick={job => setViewingJob(job)}
             />
           ))}
           {jobType.stages.length === 0 && (
@@ -111,6 +113,15 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
           defaultJobTypeId={jobType.id}
           onSave={createJob}
           onClose={() => setCreatingJob(false)}
+        />
+      )}
+
+      {viewingJob && (
+        <JobDetailModal
+          job={viewingJob}
+          jobType={jobType}
+          onEdit={() => { setEditingJob(viewingJob); setViewingJob(null); }}
+          onClose={() => setViewingJob(null)}
         />
       )}
 
