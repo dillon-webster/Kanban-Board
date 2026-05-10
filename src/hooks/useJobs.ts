@@ -1,6 +1,19 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { Job } from '../types';
+import type { Job, Profile } from '../types';
+import { mapChecklistCompletion } from '../types';
+
+type RawAssignment = { profiles: Pick<Profile, 'id' | 'full_name' | 'role'> | null };
+
+type JobSaveParams = {
+  title: string;
+  customer_name: string;
+  due_date: string;
+  notes: string;
+  job_type_id: string;
+  current_stage_id: string | null;
+  assignee_ids: string[];
+};
 
 export function useJobs(jobTypeId: string | null) {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -21,21 +34,18 @@ export function useJobs(jobTypeId: string | null) {
     if (data) {
       setJobs(data.map(job => ({
         ...job,
-        assignees: (job.job_assignments || [])
-          .map((a: any) => a.profiles)
-          .filter(Boolean),
-        checklist_completions: (job.checklist_completions || []).map((c: any) => ({
-          stage_checklist_item_id: c.stage_checklist_item_id,
-          completed_at: c.completed_at,
-          checker: Array.isArray(c.checker) ? (c.checker[0] ?? null) : c.checker,
-        })),
+        assignees: (job.job_assignments as RawAssignment[] || [])
+          .map(a => a.profiles)
+          .filter((p): p is Pick<Profile, 'id' | 'full_name' | 'role'> => p !== null),
+        checklist_completions: (job.checklist_completions || []).map(mapChecklistCompletion),
       })));
     }
     setLoading(false);
   }, [jobTypeId]);
 
   useEffect(() => {
-    fetchJobs();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async, setState only runs after await
+    fetchJobs().catch(console.error);
 
     const channel = supabase
       .channel('jobs-changes')
@@ -48,65 +58,82 @@ export function useJobs(jobTypeId: string | null) {
   }, [fetchJobs]);
 
   const moveJob = async (jobId: string, stageId: string) => {
+    const snapshot = jobs;
     setJobs(prev => prev.map(j => j.id === jobId ? { ...j, current_stage_id: stageId } : j));
-    await supabase.from('jobs').update({ current_stage_id: stageId }).eq('id', jobId);
+    const { error } = await supabase.from('jobs').update({ current_stage_id: stageId }).eq('id', jobId);
+    if (error) {
+      setJobs(snapshot);
+      return error.message;
+    }
+    return null;
   };
 
-  const createJob = async (params: {
-    title: string;
-    customer_name: string;
-    due_date: string;
-    notes: string;
-    job_type_id: string;
-    current_stage_id: string | null;
-    assignee_ids: string[];
-  }) => {
-    const { assignee_ids, ...jobData } = params;
-    const { data } = await supabase
+  const createJob = async (params: JobSaveParams) => {
+    const { data, error } = await supabase
       .from('jobs')
       .insert({
-        ...jobData,
-        customer_name: jobData.customer_name || null,
-        due_date: jobData.due_date || null,
-        notes: jobData.notes || null,
-        current_stage_id: jobData.current_stage_id || null,
+        title: params.title,
+        customer_name: params.customer_name || null,
+        due_date: params.due_date || null,
+        notes: params.notes || null,
+        job_type_id: params.job_type_id,
+        current_stage_id: params.current_stage_id,
       })
       .select()
       .single();
-    if (data && assignee_ids.length > 0) {
-      await supabase.from('job_assignments').insert(
-        assignee_ids.map(id => ({ job_id: data.id, employee_id: id }))
+    if (error) return error.message;
+    if (data && params.assignee_ids.length > 0) {
+      const { error: assignmentError } = await supabase.from('job_assignments').insert(
+        params.assignee_ids.map(id => ({ job_id: data.id, employee_id: id }))
       );
+      if (assignmentError) {
+        await supabase.from('jobs').delete().eq('id', data.id);
+        return assignmentError.message;
+      }
     }
     await fetchJobs();
+    return null;
   };
 
-  const updateJob = async (jobId: string, params: {
-    title: string;
-    customer_name: string;
-    due_date: string;
-    notes: string;
-    assignee_ids: string[];
-  }) => {
-    const { assignee_ids, ...fields } = params;
-    await supabase.from('jobs').update({
-      ...fields,
-      customer_name: fields.customer_name || null,
-      due_date: fields.due_date || null,
-      notes: fields.notes || null,
+  const updateJob = async (jobId: string, params: Omit<JobSaveParams, 'job_type_id' | 'current_stage_id'>) => {
+    const existingJob = jobs.find(job => job.id === jobId);
+    if (!existingJob) return 'Job not found.';
+
+    const previousAssigneeIds = existingJob.assignees.map(assignee => assignee.id);
+    const { error } = await supabase.from('jobs').update({
+      title: params.title,
+      customer_name: params.customer_name || null,
+      due_date: params.due_date || null,
+      notes: params.notes || null,
     }).eq('id', jobId);
-    await supabase.from('job_assignments').delete().eq('job_id', jobId);
-    if (assignee_ids.length > 0) {
-      await supabase.from('job_assignments').insert(
-        assignee_ids.map(id => ({ job_id: jobId, employee_id: id }))
+    if (error) return error.message;
+
+    const { error: deleteAssignmentsError } = await supabase.from('job_assignments').delete().eq('job_id', jobId);
+    if (deleteAssignmentsError) return deleteAssignmentsError.message;
+
+    if (params.assignee_ids.length > 0) {
+      const { error: insertAssignmentsError } = await supabase.from('job_assignments').insert(
+        params.assignee_ids.map(id => ({ job_id: jobId, employee_id: id }))
       );
+      if (insertAssignmentsError) {
+        if (previousAssigneeIds.length > 0) {
+          await supabase.from('job_assignments').insert(
+            previousAssigneeIds.map(id => ({ job_id: jobId, employee_id: id }))
+          );
+        }
+        return insertAssignmentsError.message;
+      }
     }
+
     await fetchJobs();
+    return null;
   };
 
   const deleteJob = async (jobId: string) => {
-    await supabase.from('jobs').delete().eq('id', jobId);
+    const { error } = await supabase.from('jobs').delete().eq('id', jobId);
+    if (error) return error.message;
     setJobs(prev => prev.filter(j => j.id !== jobId));
+    return null;
   };
 
   return { jobs, loading, moveJob, createJob, updateJob, deleteJob, refetch: fetchJobs };

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
+import type { Profile } from '../types';
 
 export interface AllJob {
   id: string;
@@ -14,6 +15,8 @@ export interface AllJob {
   current_stage: { id: string; name: string } | null;
   assignees: { id: string; full_name: string }[];
 }
+
+type RawAssignment = { profiles: Pick<Profile, 'id' | 'full_name'> | null };
 
 export function useAllJobs() {
   const [jobs, setJobs] = useState<AllJob[]>([]);
@@ -33,16 +36,17 @@ export function useAllJobs() {
     if (data) {
       setJobs(data.map(job => ({
         ...job,
-        assignees: (job.job_assignments || [])
-          .map((a: any) => a.profiles)
-          .filter(Boolean),
+        assignees: (job.job_assignments as RawAssignment[] || [])
+          .map(a => a.profiles)
+          .filter((p): p is Pick<Profile, 'id' | 'full_name'> => p !== null),
       })));
     }
     setLoading(false);
   }, []);
 
   useEffect(() => {
-    fetchAllJobs();
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async, setState only runs after await
+    fetchAllJobs().catch(console.error);
 
     const channel = supabase
       .channel('all-jobs-changes')

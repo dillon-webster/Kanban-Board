@@ -4,25 +4,32 @@ import { supabase } from '../lib/supabase';
 import type { Profile } from '../types';
 
 export function useProfile(user: User | null) {
+  const userId = user?.id ?? null;
   const [profile, setProfile] = useState<Profile | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [failedUserId, setFailedUserId] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!user) {
-      setProfile(null);
-      setLoading(false);
-      return;
-    }
+    let ignore = false;
+
+    if (!userId) return;
+
     supabase
       .from('profiles')
       .select('*')
-      .eq('id', user.id)
+      .eq('id', userId)
       .single()
-      .then(({ data }) => {
+      .then(({ data, error }) => {
+        if (ignore) return;
+        if (error) console.error('Failed to load profile:', error.message);
         setProfile(data);
-        setLoading(false);
+        setFailedUserId(error ? userId : null);
       });
-  }, [user?.id]);
 
-  return { profile, loading };
+    return () => { ignore = true; };
+  }, [userId]);
+
+  const currentProfile = userId && profile?.id === userId ? profile : null;
+  const loading = userId !== null && currentProfile === null && failedUserId !== userId;
+
+  return { profile: currentProfile, loading };
 }

@@ -17,6 +17,20 @@ export interface ChecklistCompletion {
   checker: { full_name: string } | null;
 }
 
+type RawChecker = { full_name: string } | { full_name: string }[] | null;
+
+export function mapChecklistCompletion(c: {
+  stage_checklist_item_id: string;
+  completed_at: string | null;
+  checker: RawChecker;
+}): ChecklistCompletion {
+  return {
+    stage_checklist_item_id: c.stage_checklist_item_id,
+    completed_at: c.completed_at,
+    checker: Array.isArray(c.checker) ? (c.checker[0] ?? null) : c.checker,
+  };
+}
+
 export interface Stage {
   id: string;
   job_type_id: string;

@@ -13,8 +13,8 @@ interface SwipeableJobProps {
   job: MyJob;
   nextStage: Stage | null;
   prevStage: Stage | null;
-  onAdvance: () => void;
-  onGoBack: () => void;
+  onAdvance: () => Promise<void>;
+  onGoBack: () => Promise<void>;
   checklistItems: StageChecklistItem[];
   completedIds: Set<string>;
   onToggleChecklistItem: (itemId: string, completed: boolean) => void;
@@ -23,6 +23,7 @@ interface SwipeableJobProps {
 
 function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack, checklistItems, completedIds, onToggleChecklistItem, canAdvance }: SwipeableJobProps) {
   const [dragX, setDragX] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
   const startXRef = useRef(0);
   const draggingRef = useRef(false);
   const isOverdue = job.due_date && new Date(job.due_date) < new Date();
@@ -32,6 +33,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack, chec
   const onTouchStart = (e: React.TouchEvent) => {
     startXRef.current = e.touches[0].clientX;
     draggingRef.current = true;
+    setIsDragging(true);
   };
 
   const onTouchMove = (e: React.TouchEvent) => {
@@ -47,6 +49,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack, chec
     else if (isGoingBack && prevStage) onGoBack();
     setDragX(0);
     draggingRef.current = false;
+    setIsDragging(false);
   };
 
   const hintParts = [];
@@ -91,7 +94,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack, chec
         onTouchEnd={onTouchEnd}
         style={{
           transform: `translateX(${dragX}px)`,
-          transition: draggingRef.current ? 'none' : 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
+          transition: isDragging ? 'none' : 'transform 0.3s cubic-bezier(0.25, 1, 0.5, 1)',
         }}
       >
         <div className="employee-job-main">
@@ -158,6 +161,7 @@ function SwipeableJobCard({ job, nextStage, prevStage, onAdvance, onGoBack, chec
 
 export default function EmployeeView({ name, onSignOut }: Props) {
   const { jobs, loading, advanceJob, toggleChecklistItem } = useMyJobs();
+  const [error, setError] = useState('');
 
   const getNextStage = (stages: Stage[], currentStageId: string | null): Stage | null => {
     if (!currentStageId) return stages[0] ?? null;
@@ -185,6 +189,7 @@ export default function EmployeeView({ name, onSignOut }: Props) {
 
       <main className="home-main">
         <h2 className="home-heading" style={{ marginBottom: 24 }}>My Jobs</h2>
+        {error && <p className="auth-error">{error}</p>}
 
         {jobs.length === 0 ? (
           <div className="home-empty">
@@ -206,11 +211,20 @@ export default function EmployeeView({ name, onSignOut }: Props) {
                   job={job}
                   nextStage={nextStage}
                   prevStage={prevStage}
-                  onAdvance={() => advanceJob(job.id, nextStage!.id)}
-                  onGoBack={() => advanceJob(job.id, prevStage!.id)}
+                  onAdvance={async () => {
+                    const advanceError = await advanceJob(job.id, nextStage!.id);
+                    setError(advanceError ?? '');
+                  }}
+                  onGoBack={async () => {
+                    const backError = await advanceJob(job.id, prevStage!.id);
+                    setError(backError ?? '');
+                  }}
                   checklistItems={checklistItems}
                   completedIds={completedIds}
-                  onToggleChecklistItem={(itemId, completed) => toggleChecklistItem(job.id, itemId, completed)}
+                  onToggleChecklistItem={async (itemId, completed) => {
+                    const toggleError = await toggleChecklistItem(job.id, itemId, completed);
+                    setError(toggleError ?? '');
+                  }}
                   canAdvance={canAdvance}
                 />
               );

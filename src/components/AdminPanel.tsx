@@ -22,20 +22,22 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
   const [inviteMessage, setInviteMessage] = useState('');
   const [deletingJobTypeId, setDeletingJobTypeId] = useState<string | null>(null);
   const [workflowError, setWorkflowError] = useState<string | null>(null);
-
-  const fetchEmployees = async () => {
-    const { data } = await supabase.from('profiles').select('*').eq('role', 'employee').order('full_name');
-    if (data) setEmployees(data);
-  };
+  const [employeeError, setEmployeeError] = useState<string | null>(null);
 
   const fetchInvites = async () => {
-    const { data } = await supabase.from('invites').select('*').order('created_at');
+    const { data, error } = await supabase.from('invites').select('*').order('created_at');
+    if (error) {
+      setEmployeeError(error.message);
+      return;
+    }
     if (data) setInvites(data);
   };
 
   useEffect(() => {
-    fetchEmployees();
-    fetchInvites();
+    supabase.from('profiles').select('*').eq('role', 'employee').order('full_name')
+      .then(({ data }) => { if (data) setEmployees(data); });
+    supabase.from('invites').select('*').order('created_at')
+      .then(({ data }) => { if (data) setInvites(data); });
   }, []);
 
   const handleCreateJobType = async () => {
@@ -49,9 +51,14 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
   const handleAddStage = async (jobTypeId: string) => {
     const name = newStageName[jobTypeId]?.trim();
     if (!name) return;
-    await addStage(jobTypeId, name, newStageNotify[jobTypeId] ?? false);
+    const error = await addStage(jobTypeId, name, newStageNotify[jobTypeId] ?? false);
+    if (error) {
+      setWorkflowError(error);
+      return;
+    }
     setNewStageName(prev => ({ ...prev, [jobTypeId]: '' }));
     setNewStageNotify(prev => ({ ...prev, [jobTypeId]: false }));
+    setWorkflowError(null);
   };
 
   const handleInvite = async () => {
@@ -60,15 +67,22 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
     const { error } = await supabase.from('invites').insert({ email });
     if (error) {
       setInviteMessage(error.message);
+      setEmployeeError(error.message);
     } else {
       setInviteMessage(`Invite created for ${email}. Share the signup link with them.`);
+      setEmployeeError(null);
       setInviteEmail('');
       fetchInvites();
     }
   };
 
   const handleDeleteInvite = async (id: string) => {
-    await supabase.from('invites').delete().eq('id', id);
+    const { error } = await supabase.from('invites').delete().eq('id', id);
+    if (error) {
+      setEmployeeError(error.message);
+      return;
+    }
+    setEmployeeError(null);
     fetchInvites();
   };
 
@@ -120,7 +134,10 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
                         <span className="stage-position">{i + 1}</span>
                         <span className="stage-list-name">{stage.name}</span>
                         {stage.notify_admin && <span className="notify-badge" title="Notifies admin">★</span>}
-                        <button className="icon-btn" onClick={() => deleteStage(jt.id, stage.id)}>✕</button>
+                        <button className="icon-btn" onClick={async () => {
+                          const error = await deleteStage(jt.id, stage.id);
+                          setWorkflowError(error);
+                        }}>✕</button>
                       </div>
 
                       {stage.checklist_items.length > 0 && (
@@ -129,7 +146,10 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
                             <div key={item.id} className="stage-checklist-row">
                               <span className="stage-checklist-bullet">—</span>
                               <span className="stage-checklist-item-text">{item.text}</span>
-                              <button className="icon-btn" onClick={() => deleteStageChecklistItem(stage.id, item.id)}>✕</button>
+                              <button className="icon-btn" onClick={async () => {
+                                const error = await deleteStageChecklistItem(stage.id, item.id);
+                                setWorkflowError(error);
+                              }}>✕</button>
                             </div>
                           ))}
                         </div>
@@ -142,10 +162,17 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
                           placeholder="Add requirement..."
                           value={newChecklistText[stage.id] ?? ''}
                           onChange={e => setNewChecklistText(prev => ({ ...prev, [stage.id]: e.target.value }))}
-                          onKeyDown={e => {
+                          onKeyDown={async e => {
                             if (e.key === 'Enter') {
                               const text = newChecklistText[stage.id]?.trim();
-                              if (text) { addStageChecklistItem(stage.id, text); setNewChecklistText(prev => ({ ...prev, [stage.id]: '' })); }
+                              if (text) {
+                                const error = await addStageChecklistItem(stage.id, text);
+                                if (error) setWorkflowError(error);
+                                else {
+                                  setWorkflowError(null);
+                                  setNewChecklistText(prev => ({ ...prev, [stage.id]: '' }));
+                                }
+                              }
                             }
                           }}
                         />
@@ -154,7 +181,15 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
                           style={{ fontSize: '0.8rem', padding: '5px 12px' }}
                           onClick={() => {
                             const text = newChecklistText[stage.id]?.trim();
-                            if (text) { addStageChecklistItem(stage.id, text); setNewChecklistText(prev => ({ ...prev, [stage.id]: '' })); }
+                            if (text) {
+                              addStageChecklistItem(stage.id, text).then(error => {
+                                if (error) setWorkflowError(error);
+                                else {
+                                  setWorkflowError(null);
+                                  setNewChecklistText(prev => ({ ...prev, [stage.id]: '' }));
+                                }
+                              });
+                            }
                           }}
                         >+</button>
                       </div>
@@ -204,6 +239,7 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
             <button className="btn btn-primary" onClick={handleInvite}>Invite</button>
           </div>
           {inviteMessage && <p className="auth-message" style={{ marginTop: 8 }}>{inviteMessage}</p>}
+          {employeeError && <p className="auth-error" style={{ marginTop: 8 }}>{employeeError}</p>}
 
           {invites.length > 0 && (
             <div className="employee-list" style={{ marginTop: 16 }}>
@@ -234,8 +270,12 @@ export default function AdminPanel({ onBack, onSignOut }: Props) {
 
       {deletingJobTypeId && (
         <ConfirmDialog
-          message={`Delete this job type and all its stages? Active jobs using it will lose their stage info.`}
-          onConfirm={async () => { await deleteJobType(deletingJobTypeId); setDeletingJobTypeId(null); }}
+          message={`Delete this workflow and its steps? This is only allowed when no jobs use it.`}
+          onConfirm={async () => {
+            const error = await deleteJobType(deletingJobTypeId);
+            setWorkflowError(error);
+            setDeletingJobTypeId(null);
+          }}
           onCancel={() => setDeletingJobTypeId(null)}
         />
       )}

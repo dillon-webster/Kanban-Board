@@ -29,6 +29,7 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const [deletingJob, setDeletingJob] = useState<Job | null>(null);
   const [activeJobId, setActiveJobId] = useState<string | null>(null);
+  const [error, setError] = useState('');
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
@@ -50,7 +51,10 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
       : jobs.find(j => j.id === over.id)?.current_stage_id;
 
     if (targetStageId && targetStageId !== jobs.find(j => j.id === active.id)?.current_stage_id) {
-      moveJob(active.id as string, targetStageId);
+      moveJob(active.id as string, targetStageId).then(moveError => {
+        if (moveError) setError(moveError);
+        else setError('');
+      });
     }
   };
 
@@ -79,6 +83,7 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
         </button>
         <button className="btn btn-ghost signout-btn" onClick={onSignOut}>Sign out</button>
       </header>
+      {error && <p className="auth-error" style={{ margin: '8px 16px 0' }}>{error}</p>}
 
       <DndContext sensors={sensors} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
         <div className="board-lists">
@@ -138,7 +143,12 @@ export default function JobBoard({ jobType, jobTypes, onBack, onSignOut }: Props
       {deletingJob && (
         <ConfirmDialog
           message={`Delete "${deletingJob.title}"? This cannot be undone.`}
-          onConfirm={async () => { await deleteJob(deletingJob.id); setDeletingJob(null); }}
+          onConfirm={async () => {
+            const deleteError = await deleteJob(deletingJob.id);
+            if (deleteError) setError(deleteError);
+            else setError('');
+            setDeletingJob(null);
+          }}
           onCancel={() => setDeletingJob(null)}
         />
       )}

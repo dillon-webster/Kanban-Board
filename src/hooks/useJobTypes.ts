@@ -1,6 +1,8 @@
 import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../lib/supabase';
-import type { JobType } from '../types';
+import type { JobType, Stage, StageChecklistItem } from '../types';
+
+type RawStage = Omit<Stage, 'checklist_items'> & { stage_checklist_items: StageChecklistItem[] };
 
 export function useJobTypes() {
   const [jobTypes, setJobTypes] = useState<JobType[]>([]);
@@ -15,16 +17,21 @@ export function useJobTypes() {
     if (data) {
       setJobTypes(data.map(jt => ({
         ...jt,
-        stages: (jt.stages || []).sort((a: any, b: any) => a.position - b.position).map((s: any) => ({
-          ...s,
-          checklist_items: (s.stage_checklist_items || []).sort((a: any, b: any) => a.position - b.position),
-        })),
+        stages: (jt.stages as RawStage[] || [])
+          .sort((a, b) => a.position - b.position)
+          .map(s => ({
+            ...s,
+            checklist_items: (s.stage_checklist_items || []).sort((a, b) => a.position - b.position),
+          })),
       })));
     }
     setLoading(false);
   }, []);
 
-  useEffect(() => { fetchJobTypes(); }, [fetchJobTypes]);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- async, setState only runs after await
+    fetchJobTypes().catch(console.error);
+  }, [fetchJobTypes]);
 
   const createJobType = async (name: string): Promise<string | null> => {
     const { data, error } = await supabase.from('job_types').insert({ name }).select().single();
@@ -34,9 +41,17 @@ export function useJobTypes() {
   };
 
   const deleteJobType = async (id: string) => {
-    await supabase.from('jobs').delete().eq('job_type_id', id);
-    await supabase.from('job_types').delete().eq('id', id);
+    const { count, error: countError } = await supabase
+      .from('jobs')
+      .select('id', { count: 'exact', head: true })
+      .eq('job_type_id', id);
+    if (countError) return countError.message;
+    if ((count ?? 0) > 0) return 'Move or delete jobs in this workflow before deleting it.';
+
+    const { error } = await supabase.from('job_types').delete().eq('id', id);
+    if (error) return error.message;
     setJobTypes(prev => prev.filter(jt => jt.id !== id));
+    return null;
   };
 
   const addStage = async (jobTypeId: string, name: string, notifyAdmin = false) => {
@@ -51,7 +66,9 @@ export function useJobTypes() {
       setJobTypes(prev => prev.map(jt =>
         jt.id === jobTypeId ? { ...jt, stages: [...jt.stages, { ...data, checklist_items: [] }] } : jt
       ));
+      return null;
     }
+    return 'Failed to add stage.';
   };
 
   const deleteStage = async (jobTypeId: string, stageId: string) => {
@@ -60,8 +77,10 @@ export function useJobTypes() {
       setJobTypes(prev => prev.map(jt =>
         jt.id === jobTypeId ? { ...jt, stages: jt.stages.filter(s => s.id !== stageId) } : jt
       ));
+      return null;
     } else {
       console.error('Failed to delete stage:', error.message);
+      return error.message;
     }
   };
 
@@ -80,17 +99,21 @@ export function useJobTypes() {
           s.id === stageId ? { ...s, checklist_items: [...s.checklist_items, data] } : s
         ),
       })));
+      return null;
     }
+    return 'Failed to add requirement.';
   };
 
   const deleteStageChecklistItem = async (stageId: string, itemId: string) => {
-    await supabase.from('stage_checklist_items').delete().eq('id', itemId);
+    const { error } = await supabase.from('stage_checklist_items').delete().eq('id', itemId);
+    if (error) return error.message;
     setJobTypes(prev => prev.map(jt => ({
       ...jt,
       stages: jt.stages.map(s =>
         s.id === stageId ? { ...s, checklist_items: s.checklist_items.filter(ci => ci.id !== itemId) } : s
       ),
     })));
+    return null;
   };
 
   return { jobTypes, loading, createJobType, deleteJobType, addStage, deleteStage, addStageChecklistItem, deleteStageChecklistItem, refetch: fetchJobTypes };

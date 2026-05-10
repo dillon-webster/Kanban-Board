@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import type { ChecklistCompletion, Job, JobType, Profile, Stage, StageChecklistItem } from '../types';
+import { mapChecklistCompletion } from '../types';
 
 interface Props {
   jobTypes: JobType[];
@@ -14,7 +15,7 @@ interface Props {
     job_type_id: string;
     current_stage_id: string | null;
     assignee_ids: string[];
-  }) => Promise<void>;
+  }) => Promise<string | null>;
   onDelete?: () => void;
   onClose: () => void;
 }
@@ -24,11 +25,15 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
   const [customerName, setCustomerName] = useState(job?.customer_name ?? '');
   const [dueDate, setDueDate] = useState(job?.due_date ?? '');
   const [notes, setNotes] = useState(job?.notes ?? '');
-  const [jobTypeId, setJobTypeId] = useState(job?.job_type_id ?? defaultJobTypeId ?? jobTypes[0]?.id ?? '');
-  const [currentStageId, setCurrentStageId] = useState<string>(job?.current_stage_id ?? '');
+  const initialJobTypeId = job?.job_type_id ?? defaultJobTypeId ?? jobTypes[0]?.id ?? '';
+  const [jobTypeId, setJobTypeId] = useState(initialJobTypeId);
+  const [currentStageId, setCurrentStageId] = useState<string>(
+    job?.current_stage_id ?? jobTypes.find(jt => jt.id === initialJobTypeId)?.stages[0]?.id ?? ''
+  );
   const [selectedEmployeeIds, setSelectedEmployeeIds] = useState<string[]>(job?.assignees.map(a => a.id) ?? []);
   const [employees, setEmployees] = useState<Profile[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
   const [completions, setCompletions] = useState<ChecklistCompletion[]>(
     job?.checklist_completions ?? []
   );
@@ -46,11 +51,7 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
       .from('job_checklist_completions')
       .select('stage_checklist_item_id, completed_at, checker:profiles!completed_by(full_name)')
       .eq('job_id', job.id);
-    if (data) setCompletions(data.map((c: any) => ({
-      stage_checklist_item_id: c.stage_checklist_item_id,
-      completed_at: c.completed_at,
-      checker: Array.isArray(c.checker) ? (c.checker[0] ?? null) : c.checker,
-    })));
+    if (data) setCompletions(data.map(mapChecklistCompletion));
   };
 
   const toggleChecklistItem = async (itemId: string) => {
@@ -58,13 +59,18 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
     const wasCompleted = completedIds.has(itemId);
     if (wasCompleted) {
       setCompletions(prev => prev.filter(c => c.stage_checklist_item_id !== itemId));
-      await supabase.from('job_checklist_completions')
+      const { error } = await supabase.from('job_checklist_completions')
         .delete().eq('job_id', job.id).eq('stage_checklist_item_id', itemId);
+      if (error) {
+        setError(error.message);
+        await fetchCompletions();
+      }
     } else {
       setCompletions(prev => [...prev, { stage_checklist_item_id: itemId, completed_at: null, checker: null }]);
       const { data: { user } } = await supabase.auth.getUser();
-      await supabase.from('job_checklist_completions')
+      const { error } = await supabase.from('job_checklist_completions')
         .insert({ job_id: job.id, stage_checklist_item_id: itemId, completed_by: user?.id });
+      if (error) setError(error.message);
       await fetchCompletions();
     }
   };
@@ -78,12 +84,6 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
       .then(({ data }) => { if (data) setEmployees(data); });
   }, []);
 
-  useEffect(() => {
-    if (!currentStageId && stages.length > 0) {
-      setCurrentStageId(stages[0].id);
-    }
-  }, [jobTypeId]);
-
   const toggleEmployee = (id: string) => {
     setSelectedEmployeeIds(prev =>
       prev.includes(id) ? prev.filter(e => e !== id) : [...prev, id]
@@ -92,8 +92,9 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
 
   const handleSave = async () => {
     if (!title.trim() || !jobTypeId) return;
+    setError('');
     setLoading(true);
-    await onSave({
+    const saveError = await onSave({
       title: title.trim(),
       customer_name: customerName.trim(),
       due_date: dueDate,
@@ -103,6 +104,10 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
       assignee_ids: selectedEmployeeIds,
     });
     setLoading(false);
+    if (saveError) {
+      setError(saveError);
+      return;
+    }
     onClose();
   };
 
@@ -127,7 +132,11 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
         <select
           className="input"
           value={jobTypeId}
-          onChange={e => { setJobTypeId(e.target.value); setCurrentStageId(''); }}
+          onChange={e => {
+            const newTypeId = e.target.value;
+            setJobTypeId(newTypeId);
+            setCurrentStageId(jobTypes.find(jt => jt.id === newTypeId)?.stages[0]?.id ?? '');
+          }}
           disabled={!!job}
         >
           {jobTypes.map(jt => (
@@ -221,6 +230,8 @@ export default function JobModal({ jobTypes, job, defaultJobTypeId, onSave, onDe
             </div>
           </>
         )}
+
+        {error && <p className="auth-error">{error}</p>}
 
         <div className="modal-actions">
           {onDelete ? (
